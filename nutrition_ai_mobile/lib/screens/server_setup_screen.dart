@@ -16,6 +16,20 @@ class _ServerSetupScreenState extends State<ServerSetupScreen> {
   bool _isTestingConnection = false;
 
   @override
+  void initState() {
+    super.initState();
+    _loadSavedServerUrl();
+  }
+
+  Future<void> _loadSavedServerUrl() async {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final savedUrl = authService.serverUrl;
+    if (savedUrl != null && savedUrl.isNotEmpty) {
+      _urlController.text = savedUrl;
+    }
+  }
+
+  @override
   void dispose() {
     _urlController.dispose();
     super.dispose();

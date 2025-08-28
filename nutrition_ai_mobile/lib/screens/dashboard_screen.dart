@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../models/food_log.dart';
+import '../widgets/expandable_fab.dart';
 import 'server_setup_screen.dart';
 import 'food_search_screen.dart';
+import 'coach_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -680,17 +682,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Expanded(child: _buildDashboardContent()),
               ],
             ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => const FoodSearchScreen(),
-            ),
-          );
-        },
-        backgroundColor: Colors.green.shade600,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Log Food', style: TextStyle(color: Colors.white)),
+      floatingActionButton: ExpandableFab(
+        distance: 112,
+        children: [
+          ActionButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const FoodSearchScreen(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.add),
+            color: Colors.green.shade600,
+            tooltip: 'Log Food',
+          ),
+          ActionButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const CoachScreen(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.smart_toy),
+            color: Colors.blue.shade600,
+            tooltip: 'AI Coach',
+          ),
+          ActionButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const ServerSetupScreen(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.settings),
+            color: Colors.purple.shade600,
+            tooltip: 'Settings',
+          ),
+        ],
       ),
     );
   }

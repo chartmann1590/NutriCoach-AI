@@ -569,10 +569,42 @@ class ApiService {
       print('Chat response: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final content = data['content'] ?? '';
+        // Handle streaming response from Flask API
+        final responseBody = response.body;
+        print('Raw response body: ${responseBody.substring(0, responseBody.length > 200 ? 200 : responseBody.length)}...');
+        
+        String content = '';
+        
+        // Parse Server-Sent Events format
+        final lines = responseBody.split('\n');
+        for (final line in lines) {
+          if (line.startsWith('data: ')) {
+            final jsonStr = line.substring(6); // Remove 'data: ' prefix
+            if (jsonStr.trim().isNotEmpty) {
+              try {
+                final data = json.decode(jsonStr);
+                if (data['content'] != null) {
+                  content += data['content'];
+                }
+                if (data['done'] == true) {
+                  break;
+                }
+                if (data['error'] != null) {
+                  throw Exception(data['error']);
+                }
+              } catch (parseError) {
+                print('JSON parse error: $parseError for line: $jsonStr');
+                // Continue processing other lines
+              }
+            }
+          }
+        }
         
         print('Received chat response: ${content.length} characters');
+        
+        if (content.isEmpty) {
+          throw Exception('No content received from chat');
+        }
         
         return content;
       } else if (response.statusCode == 401) {

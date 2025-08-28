@@ -6,10 +6,10 @@ class CoachScreen extends StatefulWidget {
   const CoachScreen({Key? key}) : super(key: key);
 
   @override
-  State<CoachScreen> createState() => _CoachScreenState();
+  CoachScreenState createState() => CoachScreenState();
 }
 
-class _CoachScreenState extends State<CoachScreen> {
+class CoachScreenState extends State<CoachScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   List<CoachMessage> _messages = [];
@@ -133,6 +133,15 @@ class _CoachScreenState extends State<CoachScreen> {
     }
   }
 
+  // Public methods for external access
+  void showQuickActions() {
+    _showQuickActions();
+  }
+
+  void clearHistory() {
+    _clearHistory();
+  }
+
   void _showQuickActions() {
     showModalBottomSheet(
       context: context,
@@ -217,8 +226,12 @@ class _CoachScreenState extends State<CoachScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         title: const Text('AI Coach'),
+        backgroundColor: Colors.blue.shade600,
+        foregroundColor: Colors.white,
+        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.lightbulb),

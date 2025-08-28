@@ -1,21 +1,56 @@
 import 'package:flutter/foundation.dart';
 import 'api_service.dart';
+import 'storage_service.dart';
 
 class AuthService extends ChangeNotifier {
   bool _isAuthenticated = false;
   bool _isLoading = false;
   String? _errorMessage;
   String? _serverUrl;
+  bool _isInitialized = false;
 
   bool get isAuthenticated => _isAuthenticated;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   String? get serverUrl => _serverUrl;
   bool get isServerConfigured => _serverUrl != null && ApiService.isConfigured;
+  bool get isInitialized => _isInitialized;
 
-  void setServerUrl(String url) {
+  // Initialize the auth service with stored data
+  Future<void> initialize() async {
+    if (_isInitialized) return;
+    
+    _isLoading = true;
+    notifyListeners();
+    
+    try {
+      // Load saved server URL
+      final savedServerUrl = await StorageService.getServerUrl();
+      if (savedServerUrl != null) {
+        _serverUrl = savedServerUrl;
+        ApiService.configure(savedServerUrl);
+      }
+      
+      // Check for saved session
+      final savedCookie = await StorageService.getSessionCookie();
+      if (savedCookie != null) {
+        ApiService.setSessionCookie(savedCookie);
+        _isAuthenticated = true;
+      }
+      
+      _isInitialized = true;
+    } catch (e) {
+      print('AuthService initialization error: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> setServerUrl(String url) async {
     _serverUrl = url;
     ApiService.configure(url);
+    await StorageService.saveServerUrl(url);
     notifyListeners();
   }
 
@@ -29,7 +64,7 @@ class AuthService extends ChangeNotifier {
       final isConnected = await ApiService.testConnection(url);
       
       if (isConnected) {
-        setServerUrl(url);
+        await setServerUrl(url);
         _errorMessage = null;
         print('AuthService: Connection successful');
       } else {
@@ -48,7 +83,7 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  Future<bool> login(String username, String password) async {
+  Future<bool> login(String username, String password, {bool rememberMe = false}) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -59,6 +94,17 @@ class AuthService extends ChangeNotifier {
       if (result['success']) {
         _isAuthenticated = true;
         _errorMessage = null;
+        
+        // Save credentials if remember me is checked
+        await StorageService.saveCredentials(username, password, rememberMe);
+        
+        // Save session cookie for auto-login
+        if (ApiService.isAuthenticated) {
+          // Get the session cookie from ApiService (we'll need to add a getter)
+          // For now, we'll save login success state
+          await StorageService.saveLastUsername(username);
+        }
+        
         notifyListeners();
         return true;
       } else {
@@ -110,6 +156,7 @@ class AuthService extends ChangeNotifier {
 
     try {
       await ApiService.logout();
+      await StorageService.clearSessionCookie();
     } catch (e) {
       print('Logout error: $e');
     } finally {
@@ -118,6 +165,19 @@ class AuthService extends ChangeNotifier {
       _errorMessage = null;
       notifyListeners();
     }
+  }
+
+  // Get saved credentials for auto-fill
+  Future<Map<String, String?>> getSavedCredentials() async {
+    return await StorageService.getCredentials();
+  }
+
+  Future<bool> shouldRememberCredentials() async {
+    return await StorageService.shouldRememberCredentials();
+  }
+
+  Future<String?> getLastUsername() async {
+    return await StorageService.getLastUsername();
   }
 
   void clearError() {
