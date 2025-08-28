@@ -458,11 +458,12 @@ def coach_chat():
         # Create the response with a callback
         from flask import Response
         response = Response(generate(), mimetype='text/plain')
+        app_obj = current_app._get_current_object()
         
         # Use response.call_on_close to save message after streaming
         def save_assistant_message():
             if response_data['content']:
-                with current_app.app_context():
+                with app_obj.app_context():
                     try:
                         assistant_msg = CoachMessage(
                             user_id=user_id,
