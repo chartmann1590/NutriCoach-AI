@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - NutriCoach{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Welcome Header -->
+    <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100">
+                        Welcome back, {{ user_name|default('User') }}!
+                    </h3>
+                    <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
+                        Here's your nutrition overview for today.
+                    </p>
+                </div>
+                <div class="flex space-x-2">
+                    <a href="{{ url_for('main.log_food') }}" 
+                       class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                        <i class="fas fa-plus mr-2"></i>
+                        Log Food
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Today's Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Calories -->
+        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center">
+                            <i class="fas fa-fire text-red-600 dark:text-red-400"></i>
+                        </div>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                                Calories
+                            </dt>
+                            <dd class="flex items-baseline">
+                                <div class="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+                                    {{ "%.0f"|format(today.totals.calories|default(0)) }}
+                                </div>
+                                <div class="ml-2 text-sm text-gray-500 dark:text-gray-400">
+                                    / {{ today.targets.calories|default(2000) }}
+                                </div>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div class="bg-red-600 h-2 rounded-full" 
+                             style="width: {{ [100, today.totals.calories_percent|default(0)]|min }}%"></div>
+                    </div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {{ "%.0f"|format(today.remaining.calories|default(0)) }} remaining
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Protein -->
+        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                            <i class="fas fa-dumbbell text-blue-600 dark:text-blue-400"></i>
+                        </div>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                                Protein
+                            </dt>
+                            <dd class="flex items-baseline">
+                                <div class="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+                                    {{ "%.0f"|format(today.totals.protein_g|default(0)) }}g
+                                </div>
+                                <div class="ml-2 text-sm text-gray-500 dark:text-gray-400">
+                                    / {{ "%.0f"|format(today.targets.protein_g|default(150)) }}g
+                                </div>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div class="bg-blue-600 h-2 rounded-full" 
+                             style="width: {{ [100, today.totals.protein_percent|default(0)]|min }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Carbs -->
+        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-yellow-100 dark:bg-yellow-900 rounded-full flex items-center justify-center">
+                            <i class="fas fa-bread-slice text-yellow-600 dark:text-yellow-400"></i>
+                        </div>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                                Carbs
+                            </dt>
+                            <dd class="flex items-baseline">
+                                <div class="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+                                    {{ "%.0f"|format(today.totals.carbs_g|default(0)) }}g
+                                </div>
+                                <div class="ml-2 text-sm text-gray-500 dark:text-gray-400">
+                                    / {{ "%.0f"|format(today.targets.carbs_g|default(250)) }}g
+                                </div>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div class="bg-yellow-600 h-2 rounded-full" 
+                             style="width: {{ [100, today.totals.carbs_percent|default(0)]|min }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fat -->
+        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
+                            <i class="fas fa-tint text-green-600 dark:text-green-400"></i>
+                        </div>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                                Fat
+                            </dt>
+                            <dd class="flex items-baseline">
+                                <div class="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+                                    {{ "%.0f"|format(today.totals.fat_g|default(0)) }}g
+                                </div>
+                                <div class="ml-2 text-sm text-gray-500 dark:text-gray-400">
+                                    / {{ "%.0f"|format(today.targets.fat_g|default(67)) }}g
+                                </div>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div class="bg-green-600 h-2 rounded-full" 
+                             style="width: {{ [100, today.totals.fat_percent|default(0)]|min }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Recent Meals -->
+        <div class="lg:col-span-2">
+            <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+                <div class="px-4 py-5 sm:px-6 border-b border-gray-200 dark:border-gray-700">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100">
+                            Today's Meals
+                        </h3>
+                        <a href="{{ url_for('main.log_food') }}" 
+                           class="text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300">
+                            Add meal
+                        </a>
+                    </div>
+                </div>
+                <div class="px-4 py-5 sm:p-6">
+                    {% if recent_logs %}
+                        <div class="space-y-4">
+                            {% for log in recent_logs %}
+                                <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0">
+                                            <div class="w-8 h-8 bg-indigo-100 dark:bg-indigo-900 rounded-full flex items-center justify-center">
+                                                {% if log['Meal'] == 'breakfast' %}
+                                                    <i class="fas fa-sun text-indigo-600 dark:text-indigo-400 text-sm"></i>
+                                                {% elif log['Meal'] == 'lunch' %}
+                                                    <i class="fas fa-utensils text-indigo-600 dark:text-indigo-400 text-sm"></i>
+                                                {% elif log['Meal'] == 'dinner' %}
+                                                    <i class="fas fa-moon text-indigo-600 dark:text-indigo-400 text-sm"></i>
+                                                {% else %}
+                                                    <i class="fas fa-cookie-bite text-indigo-600 dark:text-indigo-400 text-sm"></i>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="ml-3">
+                                            <p class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                                {{ log['Food'] }}
+                                            </p>
+                                            <p class="text-sm text-gray-500 dark:text-gray-400">
+                                                {{ log['Meal'].title() }} • {{ log['Grams'] }}g • {{ "%.0f"|format(log['Calories']) }} cal
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="text-sm text-gray-500 dark:text-gray-400">
+                                        {{ log['Time'] }}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-6">
+                            <i class="fas fa-utensils text-4xl text-gray-400 dark:text-gray-600 mb-4"></i>
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No meals logged today</h3>
+                            <p class="text-gray-500 dark:text-gray-400 mb-4">Start tracking your nutrition by logging your first meal.</p>
+                            <a href="{{ url_for('main.log_food') }}" 
+                               class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                                <i class="fas fa-plus mr-2"></i>
+                                Log Your First Meal
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="space-y-6">
+            <!-- Streak Card -->
+            <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100 mb-4">
+                        Tracking Streak
+                    </h3>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
+                            {{ streaks.current_streak|default(0) }}
+                        </div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">
+                            Days in a row
+                        </div>
+                        <div class="mt-2 text-xs text-gray-400 dark:text-gray-500">
+                            Longest: {{ streaks.longest_streak|default(0) }} days
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Weekly Summary -->
+            <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100 mb-4">
+                        This Week
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500 dark:text-gray-400">Days logged</span>
+                            <span class="font-medium text-gray-900 dark:text-gray-100">{{ weekly.days_logged|default(0) }}/7</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500 dark:text-gray-400">Avg calories</span>
+                            <span class="font-medium text-gray-900 dark:text-gray-100">{{ weekly.averages.calories|default(0) }}</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500 dark:text-gray-400">Avg protein</span>
+                            <span class="font-medium text-gray-900 dark:text-gray-100">{{ weekly.averages.protein_g|default(0) }}g</span>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <a href="{{ url_for('main.progress') }}" 
+                           class="text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300">
+                            View detailed progress →
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100 mb-4">
+                        Quick Actions
+                    </h3>
+                    <div class="space-y-2">
+                        <a href="{{ url_for('main.photo_upload') }}" 
+                           class="block w-full text-left px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md">
+                            <i class="fas fa-camera mr-2"></i>
+                            Photo Food Log
+                        </a>
+                        <a href="{{ url_for('coach.index') }}" 
+                           class="block w-full text-left px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md">
+                            <i class="fas fa-robot mr-2"></i>
+                            Ask AI Coach
+                        </a>
+                        <a href="{{ url_for('main.search_nutrition') }}" 
+                           class="block w-full text-left px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md">
+                            <i class="fas fa-search mr-2"></i>
+                            Search Foods
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function refreshDashboard() {
+    // Reload the page to get updated data
+    window.location.reload();
+}
+</script>
+{% endblock %}

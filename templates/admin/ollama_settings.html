@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}Ollama Settings - Admin{% endblock %}
+{% block page_title %}Ollama Configuration{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+    <!-- Connection Status -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Connection Status</h3>
+        <div class="flex items-center">
+            {% if ollama_status %}
+                <div class="flex items-center text-green-600 dark:text-green-400">
+                    <i class="fas fa-check-circle text-xl mr-2"></i>
+                    <span class="text-sm font-medium">Connected to Ollama</span>
+                </div>
+            {% else %}
+                <div class="flex items-center text-red-600 dark:text-red-400">
+                    <i class="fas fa-exclamation-circle text-xl mr-2"></i>
+                    <span class="text-sm font-medium">Cannot connect to Ollama</span>
+                </div>
+            {% endif %}
+        </div>
+        {% if not ollama_status %}
+            <div class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                <p>Make sure Ollama is running and accessible at the configured URL.</p>
+                <p class="mt-1">You can test the connection after updating the settings below.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Settings Form -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-600">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Ollama Configuration</h3>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Configure connection and default settings for Ollama AI models</p>
+        </div>
+        
+        <form method="POST" class="px-6 py-4 space-y-6">
+            {{ form.hidden_tag() }}
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="md:col-span-2">
+                    <label for="{{ form.ollama_url.id }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Ollama URL
+                    </label>
+                    {{ form.ollama_url(class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500") }}
+                    {% if form.ollama_url.errors %}
+                        <div class="mt-1 text-sm text-red-600 dark:text-red-400">
+                            {% for error in form.ollama_url.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">URL where Ollama server is running (e.g., http://localhost:11434)</p>
+                </div>
+
+                <div>
+                    <label for="{{ form.default_chat_model.id }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Default Chat Model
+                    </label>
+                    {{ form.default_chat_model(class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500") }}
+                    {% if form.default_chat_model.errors %}
+                        <div class="mt-1 text-sm text-red-600 dark:text-red-400">
+                            {% for error in form.default_chat_model.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Model name for chat conversations</p>
+                </div>
+
+                <div>
+                    <label for="{{ form.default_vision_model.id }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Default Vision Model
+                    </label>
+                    {{ form.default_vision_model(class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500") }}
+                    {% if form.default_vision_model.errors %}
+                        <div class="mt-1 text-sm text-red-600 dark:text-red-400">
+                            {% for error in form.default_vision_model.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Model name for image analysis</p>
+                </div>
+
+                <div>
+                    <label for="{{ form.model_timeout.id }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Model Timeout (seconds)
+                    </label>
+                    {{ form.model_timeout(class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500") }}
+                    {% if form.model_timeout.errors %}
+                        <div class="mt-1 text-sm text-red-600 dark:text-red-400">
+                            {% for error in form.model_timeout.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Request timeout for model responses</p>
+                </div>
+
+                <div>
+                    <label for="{{ form.max_tokens.id }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Max Tokens
+                    </label>
+                    {{ form.max_tokens(class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500") }}
+                    {% if form.max_tokens.errors %}
+                        <div class="mt-1 text-sm text-red-600 dark:text-red-400">
+                            {% for error in form.max_tokens.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Maximum tokens per response</p>
+                </div>
+
+                <div>
+                    <label for="{{ form.temperature.id }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Temperature
+                    </label>
+                    {{ form.temperature(class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500", step="0.1") }}
+                    {% if form.temperature.errors %}
+                        <div class="mt-1 text-sm text-red-600 dark:text-red-400">
+                            {% for error in form.temperature.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Model creativity (0.0 = deterministic, 2.0 = very creative)</p>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200 dark:border-gray-600">
+                <button type="button" onclick="testConnection()" 
+                        class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <i class="fas fa-plug mr-2"></i>
+                    Test Connection
+                </button>
+                {{ form.submit(class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500") }}
+            </div>
+        </form>
+    </div>
+
+    <!-- Help Section -->
+    <div class="bg-blue-50 dark:bg-blue-900 rounded-lg p-6">
+        <h4 class="text-md font-medium text-blue-900 dark:text-blue-100 mb-3">
+            <i class="fas fa-info-circle mr-2"></i>
+            Ollama Setup Help
+        </h4>
+        <div class="text-sm text-blue-800 dark:text-blue-200 space-y-2">
+            <p><strong>Installation:</strong> Download and install Ollama from <a href="https://ollama.ai" target="_blank" class="underline">ollama.ai</a></p>
+            <p><strong>Running:</strong> Start Ollama with <code class="bg-blue-100 dark:bg-blue-800 px-1 rounded">ollama serve</code></p>
+            <p><strong>Models:</strong> Pull models with <code class="bg-blue-100 dark:bg-blue-800 px-1 rounded">ollama pull llama3.1</code> and <code class="bg-blue-100 dark:bg-blue-800 px-1 rounded">ollama pull llava</code></p>
+            <p><strong>Remote:</strong> For remote servers, set <code class="bg-blue-100 dark:bg-blue-800 px-1 rounded">OLLAMA_HOST=0.0.0.0</code> environment variable</p>
+        </div>
+    </div>
+</div>
+
+<script>
+async function testConnection() {
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Testing...';
+    button.disabled = true;
+    
+    try {
+        const ollamaUrl = document.getElementById('ollama_url').value;
+        const response = await fetch('/admin/api/test-ollama', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrf_token]').value
+            },
+            body: JSON.stringify({ ollama_url: ollamaUrl })
+        });
+        
+        const result = await response.json();
+        
+        if (result.connected) {
+            showToast('Connection successful!', 'success');
+        } else {
+            showToast('Connection failed: ' + (result.error || 'Unknown error'), 'error');
+        }
+    } catch (error) {
+        showToast('Test failed: ' + error.message, 'error');
+    } finally {
+        button.innerHTML = originalText;
+        button.disabled = false;
+    }
+}
+
+function showToast(message, type) {
+    const toast = document.createElement('div');
+    toast.className = `fixed top-4 right-4 px-4 py-2 rounded-md text-white z-50 ${
+        type === 'success' ? 'bg-green-600' : 'bg-red-600'
+    }`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+</script>
+{% endblock %}

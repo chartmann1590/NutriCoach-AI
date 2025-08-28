@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Setup - Lifestyle - NutriCoach{% endblock %}
+{% block page_title %}Lifestyle & Preferences{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <!-- Progress Bar -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between text-sm font-medium text-gray-500 dark:text-gray-400">
+            <span>Step {{ step }} of {{ total_steps }}</span>
+            <span>{{ (step / total_steps * 100)|round }}% Complete</span>
+        </div>
+        <div class="mt-2 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+            <div class="bg-indigo-600 h-2 rounded-full transition-all duration-300" 
+                 style="width: {{ (step / total_steps * 100)|round }}%"></div>
+        </div>
+    </div>
+
+    <!-- Form Card -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <div class="mb-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100">
+                    Lifestyle & Dietary Preferences
+                </h3>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Tell us about your dietary preferences, cooking habits, and lifestyle to personalize your experience.
+                </p>
+            </div>
+
+            <form method="POST">
+                {{ form.hidden_tag() }}
+
+                <!-- Dietary Preferences -->
+                <div class="mb-6">
+                    {{ form.preferences.label(class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3") }}
+                    <div class="grid grid-cols-2 gap-3">
+                        {% for subfield in form.preferences %}
+                            <div class="flex items-center">
+                                {{ subfield(class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-gray-600 rounded") }}
+                                {{ subfield.label(class="ml-2 text-sm text-gray-700 dark:text-gray-300") }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    {% if form.preferences.errors %}
+                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.preferences.errors[0] }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Allergies -->
+                <div class="mb-6">
+                    {{ form.allergies.label(class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3") }}
+                    <div class="grid grid-cols-2 gap-3">
+                        {% for subfield in form.allergies %}
+                            <div class="flex items-center">
+                                {{ subfield(class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-gray-600 rounded") }}
+                                {{ subfield.label(class="ml-2 text-sm text-gray-700 dark:text-gray-300") }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    {% if form.allergies.errors %}
+                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.allergies.errors[0] }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Health Conditions -->
+                <div class="mb-6">
+                    {{ form.conditions.label(class="block text-sm font-medium text-gray-700 dark:text-gray-300") }}
+                    <div class="mt-1">
+                        {{ form.conditions(class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-gray-100") }}
+                    </div>
+                    {% if form.conditions.errors %}
+                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.conditions.errors[0] }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Budget and Cooking -->
+                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 mb-6">
+                    <div>
+                        {{ form.budget_range.label(class="block text-sm font-medium text-gray-700 dark:text-gray-300") }}
+                        <div class="mt-1">
+                            {{ form.budget_range(class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-gray-100") }}
+                        </div>
+                        {% if form.budget_range.errors %}
+                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.budget_range.errors[0] }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        {{ form.cooking_skill.label(class="block text-sm font-medium text-gray-700 dark:text-gray-300") }}
+                        <div class="mt-1">
+                            {{ form.cooking_skill(class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-gray-100") }}
+                        </div>
+                        {% if form.cooking_skill.errors %}
+                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.cooking_skill.errors[0] }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Kitchen Equipment -->
+                <div class="mb-6">
+                    {{ form.equipment.label(class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3") }}
+                    <div class="grid grid-cols-2 gap-3">
+                        {% for subfield in form.equipment %}
+                            <div class="flex items-center">
+                                {{ subfield(class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-gray-600 rounded") }}
+                                {{ subfield.label(class="ml-2 text-sm text-gray-700 dark:text-gray-300") }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    {% if form.equipment.errors %}
+                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.equipment.errors[0] }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Meals and Schedule -->
+                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 mb-6">
+                    <div>
+                        {{ form.meals_per_day.label(class="block text-sm font-medium text-gray-700 dark:text-gray-300") }}
+                        <div class="mt-1">
+                            {{ form.meals_per_day(class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-gray-100") }}
+                        </div>
+                        {% if form.meals_per_day.errors %}
+                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.meals_per_day.errors[0] }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        {{ form.sleep_schedule.label(class="block text-sm font-medium text-gray-700 dark:text-gray-300") }}
+                        <div class="mt-1">
+                            {{ form.sleep_schedule(class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-gray-100") }}
+                        </div>
+                        {% if form.sleep_schedule.errors %}
+                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.sleep_schedule.errors[0] }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <div class="flex justify-between pt-6">
+                    <a href="{{ url_for('onboarding.skip_onboarding') }}" 
+                       class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
+                        Skip Setup
+                    </a>
+                    
+                    {{ form.submit(class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500") }}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Help Text -->
+    <div class="mt-6 bg-blue-50 dark:bg-blue-900 rounded-lg p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <i class="fas fa-info-circle text-blue-400"></i>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-blue-800 dark:text-blue-200">
+                    Why do we need this information?
+                </h3>
+                <div class="mt-2 text-sm text-blue-700 dark:text-blue-300">
+                    <p>This information helps us provide better meal recommendations that fit your lifestyle, dietary needs, and cooking abilities. All information is optional and can be updated later in your settings.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

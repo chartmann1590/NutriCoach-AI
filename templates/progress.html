@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+
+{% block title %}Progress - NutriCoach{% endblock %}
+{% block page_title %}Progress & Analytics{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Progress Overview -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100 mb-4">
+                Progress Overview
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                        {{ streaks.current_streak }}
+                    </div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">
+                        Current Streak (days)
+                    </div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-green-600 dark:text-green-400">
+                        {{ streaks.total_days_logged }}
+                    </div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">
+                        Total Days Logged
+                    </div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                        {{ streaks.longest_streak }}
+                    </div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">
+                        Longest Streak (days)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Weight Trends -->
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100 mb-4">
+                    Weight Trends
+                </h3>
+                <div class="h-64">
+                    <canvas id="weightChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Nutrition Trends -->
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100 mb-4">
+                    Calorie Trends (30 days)
+                </h3>
+                <div class="h-64">
+                    <canvas id="calorieChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Macro Distribution -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100 mb-4">
+                    Macro Distribution (30 days avg)
+                </h3>
+                <div class="h-64">
+                    <canvas id="macroChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100 mb-4">
+                    Meal Distribution (30 days)
+                </h3>
+                <div class="h-64">
+                    <canvas id="mealChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Foods -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100 mb-4">
+                Most Logged Foods (30 days)
+            </h3>
+            {% if top_foods %}
+                <div class="space-y-3">
+                    {% for food in top_foods %}
+                        <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                            <div>
+                                <span class="font-medium text-gray-900 dark:text-gray-100">{{ food.name }}</span>
+                                <span class="text-sm text-gray-500 dark:text-gray-400 ml-2">
+                                    ({{ food.frequency }} times)
+                                </span>
+                            </div>
+                            <div class="text-sm text-gray-600 dark:text-gray-300">
+                                {{ "%.0f"|format(food.avg_calories) }} cal avg
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-gray-500 dark:text-gray-400 text-center py-4">
+                    No food logs yet. Start tracking to see your patterns!
+                </p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Insights -->
+    {% if insights %}
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100 mb-4">
+                    Insights & Recommendations
+                </h3>
+                <div class="space-y-3">
+                    <div class="flex items-center">
+                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Weight Trend:</span>
+                        <span class="ml-2 px-2 py-1 text-xs rounded-full 
+                            {% if insights.weight_trend == 'decreasing' %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300{% elif insights.weight_trend == 'increasing' %}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300{% else %}bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300{% endif %}">
+                            {{ insights.weight_trend.title() }}
+                        </span>
+                    </div>
+                    
+                    <div class="flex items-center">
+                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Consistency Score:</span>
+                        <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">
+                            {{ "%.0f"|format(insights.consistency_score) }}%
+                        </span>
+                    </div>
+
+                    {% if insights.recommendations %}
+                        <div class="mt-4">
+                            <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Recommendations:</h4>
+                            <ul class="space-y-1">
+                                {% for rec in insights.recommendations %}
+                                    <li class="text-sm text-gray-600 dark:text-gray-400 flex items-start">
+                                        <i class="fas fa-lightbulb text-yellow-500 mr-2 mt-0.5"></i>
+                                        {{ rec }}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Export Options -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100 mb-4">
+                Export Data
+            </h3>
+            <div class="flex space-x-4">
+                <a href="/api/export/logs.csv?from={{ export_from_date }}&to={{ export_to_date }}" 
+                   class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                    <i class="fas fa-download mr-2"></i>
+                    Export Last 30 Days (CSV)
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Initialize charts with data
+document.addEventListener('DOMContentLoaded', function() {
+    // Load chart data and initialize charts
+    loadChartData();
+});
+
+function loadChartData() {
+    // Weight trends
+    fetch('/api/analytics/weight-trends?days=90')
+        .then(response => response.json())
+        .then(data => initWeightChart(data))
+        .catch(console.error);
+    
+    // Nutrition trends
+    fetch('/api/analytics/nutrition-trends?days=30')
+        .then(response => response.json())
+        .then(data => initCalorieChart(data))
+        .catch(console.error);
+    
+    // Dashboard data for macro and meal charts
+    fetch('/api/analytics/dashboard')
+        .then(response => response.json())
+        .then(data => {
+            initMacroChart(data.macro_distribution);
+            initMealChart(data.meal_distribution);
+        })
+        .catch(console.error);
+}
+
+function initWeightChart(data) {
+    const ctx = document.getElementById('weightChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: data.dates || [],
+            datasets: [{
+                label: 'Weight (kg)',
+                data: data.weights || [],
+                borderColor: 'rgb(99, 102, 241)',
+                backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                tension: 0.4
+            }, {
+                label: 'Trend',
+                data: data.trend || [],
+                borderColor: 'rgb(34, 197, 94)',
+                backgroundColor: 'transparent',
+                borderDash: [5, 5],
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: false
+                }
+            }
+        }
+    });
+}
+
+function initCalorieChart(data) {
+    const ctx = document.getElementById('calorieChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: data.dates || [],
+            datasets: [{
+                label: 'Calories',
+                data: data.calories || [],
+                borderColor: 'rgb(239, 68, 68)',
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+function initMacroChart(data) {
+    const ctx = document.getElementById('macroChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: data.labels || ['Protein', 'Carbs', 'Fat'],
+            datasets: [{
+                data: data.values || [0, 0, 0],
+                backgroundColor: [
+                    'rgb(59, 130, 246)',
+                    'rgb(245, 158, 11)',
+                    'rgb(34, 197, 94)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+}
+
+function initMealChart(data) {
+    const ctx = document.getElementById('mealChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: data.labels || [],
+            datasets: [{
+                label: 'Calories',
+                data: data.calories || [],
+                backgroundColor: [
+                    'rgba(255, 193, 7, 0.8)',
+                    'rgba(40, 167, 69, 0.8)',
+                    'rgba(220, 53, 69, 0.8)',
+                    'rgba(108, 117, 125, 0.8)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,108 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env
+pip-log.txt
+pip-delete-this-directory.txt
+.tox
+.coverage
+.pytest_cache
+htmlcov
+
+# Virtual environments
+venv/
+.venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node modules (if any)
+node_modules/
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+
+# Uploads
+static/uploads/
+
+# Test outputs
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Documentation
+docs/_build/
+docs/screenshots/
+*.png
+*.jpg
+*.jpeg
+
+# Local development scripts
+capture_*.py
+*screenshot*.py
+document_*.py
+*_test_*.py
+simple_*.py
+actual_*.py
+comprehensive_*.py
+
+# Environment files
+.env
+
+# Temporary files
+*.tmp
+*.temp
+
+# Mobile app directories
+nutricoach_mobile_final/
+nutricoach_mobile_new/
+*.apk
+*.ipa
+android/
+ios/
+flutter/
+
+# Build directories
+build/
+dist/
+target/
+
+# Test directories  
+venv_test/
+
+# Docker files
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Version control
+.git/
+.gitignore
+
+# Development tools
+.pytest_cache/
+.mypy_cache/
+.black/
+.coverage*

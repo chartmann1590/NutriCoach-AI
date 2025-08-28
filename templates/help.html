@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}Help Center - NutriCoach{% endblock %}
+{% block page_title %}Help Center{% endblock %}
+
+{% block auth_content %}
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-6xl mx-auto">
+    <!-- Header -->
+    <div class="text-center mb-12">
+        <h1 class="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            How can we help you?
+        </h1>
+        <p class="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            Find answers to common questions about using NutriCoach for your nutrition tracking and health goals.
+        </p>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="max-w-2xl mx-auto mb-12">
+        <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i class="fas fa-search text-gray-400"></i>
+            </div>
+            <input type="text" 
+                   class="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg leading-5 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                   placeholder="Search help articles..."
+                   id="helpSearch">
+        </div>
+    </div>
+
+    <!-- FAQ Categories -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+        <!-- Getting Started -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div class="text-indigo-600 dark:text-indigo-400 text-3xl mb-4">
+                <i class="fas fa-rocket"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Getting Started</h3>
+            <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                <li><a href="#setup" class="hover:text-indigo-600 dark:hover:text-indigo-400">Setting up your profile</a></li>
+                <li><a href="#onboarding" class="hover:text-indigo-600 dark:hover:text-indigo-400">Completing onboarding</a></li>
+                <li><a href="#goals" class="hover:text-indigo-600 dark:hover:text-indigo-400">Setting nutrition goals</a></li>
+                <li><a href="#navigation" class="hover:text-indigo-600 dark:hover:text-indigo-400">Navigating the app</a></li>
+            </ul>
+        </div>
+
+        <!-- Food Logging -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div class="text-green-600 dark:text-green-400 text-3xl mb-4">
+                <i class="fas fa-utensils"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Food Logging</h3>
+            <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                <li><a href="#logging" class="hover:text-indigo-600 dark:hover:text-indigo-400">How to log meals</a></li>
+                <li><a href="#photo" class="hover:text-indigo-600 dark:hover:text-indigo-400">Photo food recognition</a></li>
+                <li><a href="#search" class="hover:text-indigo-600 dark:hover:text-indigo-400">Searching the food database</a></li>
+                <li><a href="#portions" class="hover:text-indigo-600 dark:hover:text-indigo-400">Understanding portions</a></li>
+            </ul>
+        </div>
+
+        <!-- AI Coach -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div class="text-purple-600 dark:text-purple-400 text-3xl mb-4">
+                <i class="fas fa-robot"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">AI Coach</h3>
+            <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                <li><a href="#ollama" class="hover:text-indigo-600 dark:hover:text-indigo-400">Setting up Ollama</a></li>
+                <li><a href="#coaching" class="hover:text-indigo-600 dark:hover:text-indigo-400">Getting nutrition advice</a></li>
+                <li><a href="#recommendations" class="hover:text-indigo-600 dark:hover:text-indigo-400">Understanding recommendations</a></li>
+                <li><a href="#privacy" class="hover:text-indigo-600 dark:hover:text-indigo-400">AI privacy and data</a></li>
+            </ul>
+        </div>
+
+        <!-- Progress Tracking -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div class="text-orange-600 dark:text-orange-400 text-3xl mb-4">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Progress Tracking</h3>
+            <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                <li><a href="#dashboard" class="hover:text-indigo-600 dark:hover:text-indigo-400">Reading your dashboard</a></li>
+                <li><a href="#analytics" class="hover:text-indigo-600 dark:hover:text-indigo-400">Understanding analytics</a></li>
+                <li><a href="#trends" class="hover:text-indigo-600 dark:hover:text-indigo-400">Viewing nutrition trends</a></li>
+                <li><a href="#export" class="hover:text-indigo-600 dark:hover:text-indigo-400">Exporting your data</a></li>
+            </ul>
+        </div>
+
+        <!-- Account & Settings -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div class="text-blue-600 dark:text-blue-400 text-3xl mb-4">
+                <i class="fas fa-cog"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Account & Settings</h3>
+            <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                <li><a href="#profile" class="hover:text-indigo-600 dark:hover:text-indigo-400">Updating your profile</a></li>
+                <li><a href="#preferences" class="hover:text-indigo-600 dark:hover:text-indigo-400">Managing preferences</a></li>
+                <li><a href="#security" class="hover:text-indigo-600 dark:hover:text-indigo-400">Account security</a></li>
+                <li><a href="#delete" class="hover:text-indigo-600 dark:hover:text-indigo-400">Deleting your account</a></li>
+            </ul>
+        </div>
+
+        <!-- Troubleshooting -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div class="text-red-600 dark:text-red-400 text-3xl mb-4">
+                <i class="fas fa-tools"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Troubleshooting</h3>
+            <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                <li><a href="#login" class="hover:text-indigo-600 dark:hover:text-indigo-400">Login issues</a></li>
+                <li><a href="#sync" class="hover:text-indigo-600 dark:hover:text-indigo-400">Data sync problems</a></li>
+                <li><a href="#performance" class="hover:text-indigo-600 dark:hover:text-indigo-400">Performance issues</a></li>
+                <li><a href="#contact" class="hover:text-indigo-600 dark:hover:text-indigo-400">Contact support</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Popular Articles -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                Popular Help Articles
+            </h2>
+        </div>
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-4">
+                    <div class="border-l-4 border-indigo-500 pl-4">
+                        <h3 class="font-medium text-gray-900 dark:text-gray-100">How do I set up my nutrition goals?</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Learn how to configure your daily calorie and macronutrient targets based on your fitness goals.</p>
+                    </div>
+                    
+                    <div class="border-l-4 border-green-500 pl-4">
+                        <h3 class="font-medium text-gray-900 dark:text-gray-100">Why is my AI coach not working?</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Troubleshoot common Ollama connection and configuration issues for AI features.</p>
+                    </div>
+                    
+                    <div class="border-l-4 border-purple-500 pl-4">
+                        <h3 class="font-medium text-gray-900 dark:text-gray-100">How accurate is photo food recognition?</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Understand the capabilities and limitations of AI-powered food identification.</p>
+                    </div>
+                </div>
+                
+                <div class="space-y-4">
+                    <div class="border-l-4 border-orange-500 pl-4">
+                        <h3 class="font-medium text-gray-900 dark:text-gray-100">Can I export my nutrition data?</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Learn how to download your food logs and progress data in various formats.</p>
+                    </div>
+                    
+                    <div class="border-l-4 border-blue-500 pl-4">
+                        <h3 class="font-medium text-gray-900 dark:text-gray-100">Is my nutrition data private?</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Understand how we protect your personal health information and data privacy.</p>
+                    </div>
+                    
+                    <div class="border-l-4 border-red-500 pl-4">
+                        <h3 class="font-medium text-gray-900 dark:text-gray-100">How do I delete my account?</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Step-by-step guide to permanently removing your account and all associated data.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Support -->
+    <div class="mt-12 text-center">
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            Still need help?
+        </h2>
+        <p class="text-gray-600 dark:text-gray-300 mb-6">
+            Can't find what you're looking for? Our support team is here to help.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="mailto:support@nutricoach.com" 
+               class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                <i class="fas fa-envelope mr-2"></i>
+                Email Support
+            </a>
+            <a href="{{ url_for('main.index') }}" 
+               class="inline-flex items-center px-6 py-3 border border-gray-300 dark:border-gray-600 text-base font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
+                <i class="fas fa-home mr-2"></i>
+                Back to Home
+            </a>
+        </div>
+    </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('helpSearch').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const articles = document.querySelectorAll('[href^="#"]');
+    
+    articles.forEach(article => {
+        const text = article.textContent.toLowerCase();
+        const parent = article.closest('.bg-white, .border-l-4');
+        
+        if (text.includes(searchTerm) || searchTerm === '') {
+            parent.style.display = 'block';
+        } else {
+            parent.style.display = 'none';
+        }
+    });
+});
+</script>
+{% endblock %}

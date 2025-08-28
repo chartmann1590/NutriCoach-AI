@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - NutriCoach{% endblock %}
+{% block page_title %}Settings{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100 mb-6">
+                Settings Overview
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Profile Settings -->
+                <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-user-circle text-2xl text-indigo-600 dark:text-indigo-400"></i>
+                        </div>
+                        <div class="ml-4 flex-1">
+                            <h4 class="text-lg font-medium text-gray-900 dark:text-gray-100">
+                                Profile Settings
+                            </h4>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">
+                                Update your personal information, goals, and dietary preferences.
+                            </p>
+                            <a href="{{ url_for('settings.profile') }}" 
+                               class="mt-2 inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300">
+                                Edit Profile
+                                <i class="fas fa-arrow-right ml-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Settings -->
+                <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-robot text-2xl text-purple-600 dark:text-purple-400"></i>
+                        </div>
+                        <div class="ml-4 flex-1">
+                            <h4 class="text-lg font-medium text-gray-900 dark:text-gray-100">
+                                AI & Ollama Settings
+                            </h4>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">
+                                Configure your AI models, chat behavior, and Ollama connection.
+                            </p>
+                            <a href="{{ url_for('settings.ollama') }}" 
+                               class="mt-2 inline-flex items-center text-sm font-medium text-purple-600 hover:text-purple-500 dark:text-purple-400 dark:hover:text-purple-300">
+                                Configure AI
+                                <i class="fas fa-arrow-right ml-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Export -->
+                <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-download text-2xl text-green-600 dark:text-green-400"></i>
+                        </div>
+                        <div class="ml-4 flex-1">
+                            <h4 class="text-lg font-medium text-gray-900 dark:text-gray-100">
+                                Data Export
+                            </h4>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">
+                                Export your nutrition logs and data for external analysis.
+                            </p>
+                            <a href="{{ url_for('settings.export_data') }}" 
+                               class="mt-2 inline-flex items-center text-sm font-medium text-green-600 hover:text-green-500 dark:text-green-400 dark:hover:text-green-300">
+                                Export Data
+                                <i class="fas fa-arrow-right ml-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Privacy Settings -->
+                <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-shield-alt text-2xl text-red-600 dark:text-red-400"></i>
+                        </div>
+                        <div class="ml-4 flex-1">
+                            <h4 class="text-lg font-medium text-gray-900 dark:text-gray-100">
+                                Privacy & Security
+                            </h4>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">
+                                Manage your privacy preferences and data handling settings.
+                            </p>
+                            <a href="{{ url_for('settings.privacy') }}" 
+                               class="mt-2 inline-flex items-center text-sm font-medium text-red-600 hover:text-red-500 dark:text-red-400 dark:hover:text-red-300">
+                                Privacy Settings
+                                <i class="fas fa-arrow-right ml-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Info -->
+            <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Current Profile Info -->
+                {% if profile %}
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                        <h4 class="text-md font-medium text-gray-900 dark:text-gray-100 mb-3">
+                            Current Profile
+                        </h4>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-500 dark:text-gray-400">Name:</span>
+                                <span class="text-gray-900 dark:text-gray-100">{{ profile.name }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-500 dark:text-gray-400">Goal:</span>
+                                <span class="text-gray-900 dark:text-gray-100">{{ profile.goal_type.title() }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-500 dark:text-gray-400">Activity:</span>
+                                <span class="text-gray-900 dark:text-gray-100">{{ profile.activity_level.replace('_', ' ').title() }}</span>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- AI Configuration Status -->
+                <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                    <h4 class="text-md font-medium text-gray-900 dark:text-gray-100 mb-3">
+                        AI Configuration
+                    </h4>
+                    <div class="space-y-2 text-sm">
+                        {% if settings %}
+                            <div class="flex justify-between">
+                                <span class="text-gray-500 dark:text-gray-400">Ollama URL:</span>
+                                <span class="text-gray-900 dark:text-gray-100">{{ settings.ollama_url or 'Not set' }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-500 dark:text-gray-400">Chat Model:</span>
+                                <span class="text-gray-900 dark:text-gray-100">{{ settings.chat_model or 'Not selected' }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-500 dark:text-gray-400">Vision Model:</span>
+                                <span class="text-gray-900 dark:text-gray-100">{{ settings.vision_model or 'Not selected' }}</span>
+                            </div>
+                        {% else %}
+                            <p class="text-gray-500 dark:text-gray-400">AI not configured</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

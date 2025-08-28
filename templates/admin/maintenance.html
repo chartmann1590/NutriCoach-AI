@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}System Maintenance - NutriCoach Admin{% endblock %}
+{% block page_title %}System Maintenance{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- System Information -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">System Information</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                <div class="flex items-center">
+                    <i class="fas fa-database text-blue-600 text-xl mr-3"></i>
+                    <div>
+                        <h4 class="font-semibold text-gray-900 dark:text-gray-100">Database</h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">SQLite Database</p>
+                        <p class="text-xs text-green-600">Connected</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                <div class="flex items-center">
+                    <i class="fas fa-memory text-purple-600 text-xl mr-3"></i>
+                    <div>
+                        <h4 class="font-semibold text-gray-900 dark:text-gray-100">Memory Usage</h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Application Memory</p>
+                        <p class="text-xs text-yellow-600">Monitor</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                <div class="flex items-center">
+                    <i class="fas fa-clock text-green-600 text-xl mr-3"></i>
+                    <div>
+                        <h4 class="font-semibold text-gray-900 dark:text-gray-100">Uptime</h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">System Running</p>
+                        <p class="text-xs text-green-600">Active</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Maintenance Actions -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Maintenance Operations</h3>
+        
+        <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-4 mb-6">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                        Warning
+                    </h3>
+                    <div class="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
+                        <p>Maintenance operations can affect system performance and user experience. Please ensure you understand the implications of each action before proceeding.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <form method="POST" class="space-y-6">
+            {{ form.hidden_tag() }}
+            
+            <div>
+                {{ form.action.label(class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2") }}
+                {{ form.action(class="block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500") }}
+                {% if form.action.errors %}
+                    <div class="mt-1 text-sm text-red-600">
+                        {% for error in form.action.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Action Descriptions -->
+            <div id="action-descriptions" class="space-y-4">
+                <div class="action-description bg-gray-50 dark:bg-gray-700 p-4 rounded-lg hidden" data-action="clear_logs">
+                    <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">Clear System Logs</h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                        Removes all system log entries from the database. This will permanently delete all audit trail information.
+                        <strong>This action cannot be undone.</strong>
+                    </p>
+                    <div class="mt-2 text-sm text-red-600 dark:text-red-400">
+                        <i class="fas fa-exclamation-circle mr-1"></i>
+                        Warning: This will remove all system logs and audit trails.
+                    </div>
+                </div>
+
+                <div class="action-description bg-gray-50 dark:bg-gray-700 p-4 rounded-lg hidden" data-action="optimize_db">
+                    <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">Optimize Database</h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                        Performs database optimization including vacuuming, reindexing, and analyzing tables to improve performance.
+                        This operation may take several minutes depending on database size.
+                    </p>
+                    <div class="mt-2 text-sm text-blue-600 dark:text-blue-400">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Recommended to run during low-traffic periods.
+                    </div>
+                </div>
+
+                <div class="action-description bg-gray-50 dark:bg-gray-700 p-4 rounded-lg hidden" data-action="reset_user_sessions">
+                    <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">Reset All User Sessions</h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                        Forces all users to log out by invalidating all active sessions. Users will need to log in again to access the application.
+                    </p>
+                    <div class="mt-2 text-sm text-orange-600 dark:text-orange-400">
+                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                        All users will be logged out immediately.
+                    </div>
+                </div>
+
+                <div class="action-description bg-gray-50 dark:bg-gray-700 p-4 rounded-lg hidden" data-action="backup_db">
+                    <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">Backup Database</h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                        Creates a complete backup of the database including all user data, settings, and logs.
+                        The backup will be stored in the configured backup directory.
+                    </p>
+                    <div class="mt-2 text-sm text-green-600 dark:text-green-400">
+                        <i class="fas fa-check-circle mr-1"></i>
+                        Safe operation - no data will be modified.
+                    </div>
+                </div>
+
+                <div class="action-description bg-gray-50 dark:bg-gray-700 p-4 rounded-lg hidden" data-action="clear_temp_files">
+                    <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">Clear Temporary Files</h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                        Removes temporary files, cached data, and uploaded files that are no longer needed.
+                        This can help free up disk space and improve performance.
+                    </p>
+                    <div class="mt-2 text-sm text-blue-600 dark:text-blue-400">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Safe operation - only removes temporary and cache files.
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center">
+                {{ form.confirm(class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-gray-600 rounded mr-2") }}
+                {{ form.confirm.label(class="text-sm text-gray-700 dark:text-gray-300") }}
+                {% if form.confirm.errors %}
+                    <div class="ml-2 text-sm text-red-600">
+                        {% for error in form.confirm.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="flex justify-end space-x-3">
+                <a href="{{ url_for('admin.dashboard') }}" 
+                   class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
+                    Cancel
+                </a>
+                {{ form.submit(class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500") }}
+            </div>
+        </form>
+    </div>
+
+    <!-- Maintenance History -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Recent Maintenance Activities</h3>
+        <div class="text-center text-gray-500 dark:text-gray-400 py-8">
+            <i class="fas fa-clipboard-list text-4xl mb-4"></i>
+            <p>No recent maintenance activities recorded.</p>
+            <p class="text-sm mt-2">Maintenance actions will be logged here for audit purposes.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const actionSelect = document.querySelector('select[name="action"]');
+    const descriptions = document.querySelectorAll('.action-description');
+    
+    function showDescription() {
+        // Hide all descriptions
+        descriptions.forEach(desc => desc.classList.add('hidden'));
+        
+        // Show the selected action's description
+        const selectedAction = actionSelect.value;
+        if (selectedAction) {
+            const targetDesc = document.querySelector(`[data-action="${selectedAction}"]`);
+            if (targetDesc) {
+                targetDesc.classList.remove('hidden');
+            }
+        }
+    }
+    
+    // Show description on page load
+    showDescription();
+    
+    // Show description when selection changes
+    actionSelect.addEventListener('change', showDescription);
+});
+</script>
+{% endblock %}

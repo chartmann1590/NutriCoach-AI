@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}AI & Ollama Settings - NutriCoach{% endblock %}
+{% block page_title %}AI & Ollama Settings{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Back Navigation -->
+    <div class="mb-6">
+        <a href="{{ url_for('settings.index') }}" 
+           class="inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+            <i class="fas fa-arrow-left mr-2"></i>
+            Back to Settings
+        </a>
+    </div>
+
+    <!-- Connection Status -->
+    <div class="mb-6">
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    {% if connection_status %}
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 bg-green-400 rounded-full mr-2"></div>
+                            <span class="text-green-700 dark:text-green-400">Connected to Ollama</span>
+                        </div>
+                    {% else %}
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 bg-red-400 rounded-full mr-2"></div>
+                            <span class="text-red-700 dark:text-red-400">Not Connected</span>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="ml-4">
+                    <button onclick="testConnection()" 
+                            class="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-white bg-indigo-600 hover:bg-indigo-700">
+                        <i class="fas fa-plug mr-1"></i>
+                        Test Connection
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Form -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100 mb-6">
+                <i class="fas fa-robot mr-2"></i>
+                AI Configuration
+            </h3>
+            
+            <form method="POST" class="space-y-6">
+                {{ form.hidden_tag() }}
+                
+                <!-- Ollama URL -->
+                <div>
+                    {{ form.ollama_url.label(class="block text-sm font-medium text-gray-700 dark:text-gray-300") }}
+                    <div class="mt-1">
+                        {{ form.ollama_url(class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md", placeholder="http://localhost:11434") }}
+                    </div>
+                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                        The URL where your Ollama server is running. Default is http://localhost:11434
+                    </p>
+                </div>
+
+                <!-- Chat Model -->
+                <div>
+                    {{ form.chat_model.label(class="block text-sm font-medium text-gray-700 dark:text-gray-300") }}
+                    <div class="mt-1">
+                        {{ form.chat_model(class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md") }}
+                    </div>
+                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                        Choose the model for nutrition coaching conversations
+                    </p>
+                </div>
+
+                <!-- Vision Model -->
+                <div>
+                    {{ form.vision_model.label(class="block text-sm font-medium text-gray-700 dark:text-gray-300") }}
+                    <div class="mt-1">
+                        {{ form.vision_model(class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md") }}
+                    </div>
+                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                        Choose the model for analyzing food photos
+                    </p>
+                </div>
+
+                <!-- System Prompt -->
+                <div>
+                    {{ form.system_prompt.label(class="block text-sm font-medium text-gray-700 dark:text-gray-300") }}
+                    <div class="mt-1">
+                        {{ form.system_prompt(class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md", rows="6", placeholder="Enter the system prompt for the AI coach...") }}
+                    </div>
+                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                        This prompt defines how the AI coach will behave and respond to users
+                    </p>
+                </div>
+
+                <!-- Safety Mode -->
+                <div class="flex items-start">
+                    <div class="flex items-center h-5">
+                        {{ form.safety_mode(class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded") }}
+                    </div>
+                    <div class="ml-3 text-sm">
+                        {{ form.safety_mode.label(class="font-medium text-gray-700 dark:text-gray-300") }}
+                        <p class="text-gray-500 dark:text-gray-400">
+                            Filters responses to ensure appropriate nutrition advice and avoid medical recommendations
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="flex justify-end">
+                    {{ form.submit(class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500") }}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Available Models Info -->
+    {% if available_models %}
+    <div class="mt-6 bg-gray-50 dark:bg-gray-700 rounded-lg p-6">
+        <h4 class="text-md font-medium text-gray-900 dark:text-gray-100 mb-3">
+            Available Models
+        </h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+            {% for model in available_models %}
+                <div class="bg-white dark:bg-gray-600 rounded px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
+                    {{ model }}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function testConnection() {
+    const url = document.getElementById('ollama_url').value;
+    
+    if (!url) {
+        alert('Please enter an Ollama URL first');
+        return;
+    }
+    
+    // Show loading state
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Testing...';
+    button.disabled = true;
+    
+    fetch('/api/test-ollama-connection', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ url: url })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Connection successful!');
+        } else {
+            alert('Connection failed: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        alert('Connection test failed: ' + error);
+    })
+    .finally(() => {
+        // Restore button
+        button.innerHTML = originalText;
+        button.disabled = false;
+        
+        // Reload page to update connection status
+        window.location.reload();
+    });
+}
+</script>
+{% endblock %}

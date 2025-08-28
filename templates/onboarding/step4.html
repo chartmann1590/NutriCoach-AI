@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}Setup - AI Configuration - NutriCoach{% endblock %}
+{% block page_title %}AI Configuration{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <!-- Progress Bar -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between text-sm font-medium text-gray-500 dark:text-gray-400">
+            <span>Step {{ step }} of {{ total_steps }}</span>
+            <span>{{ (step / total_steps * 100)|round }}% Complete</span>
+        </div>
+        <div class="mt-2 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+            <div class="bg-indigo-600 h-2 rounded-full transition-all duration-300" 
+                 style="width: {{ (step / total_steps * 100)|round }}%"></div>
+        </div>
+    </div>
+
+    <!-- Form Card -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <div class="mb-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100">
+                    AI Coach Configuration
+                </h3>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Configure your AI nutrition coach to provide personalized guidance and recommendations.
+                </p>
+            </div>
+
+            <form method="POST">
+                {{ form.hidden_tag() }}
+
+                <!-- Ollama URL -->
+                <div class="mb-6">
+                    {{ form.ollama_url.label(class="block text-sm font-medium text-gray-700 dark:text-gray-300") }}
+                    <div class="mt-1">
+                        {{ form.ollama_url(class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-gray-100") }}
+                    </div>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        URL where your Ollama instance is running (e.g., http://localhost:11434)
+                    </p>
+                    {% if form.ollama_url.errors %}
+                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.ollama_url.errors[0] }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Available Models -->
+                {% if available_models %}
+                <div class="mb-6">
+                    <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Available AI Models</h4>
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-md p-4">
+                        <div class="text-sm text-gray-600 dark:text-gray-400">
+                            {% if available_models %}
+                                <p class="mb-2">✅ Connection successful! Found {{ available_models|length }} model(s):</p>
+                                <ul class="list-disc list-inside space-y-1">
+                                    {% for model_id, model_name in available_models %}
+                                        <li class="text-xs">{{ model_name }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <p>⚠️ No models found. Please check your Ollama installation.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="mb-6">
+                    <div class="bg-yellow-50 dark:bg-yellow-900 rounded-md p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                                    Ollama Not Connected
+                                </h3>
+                                <div class="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
+                                    <p>Cannot connect to Ollama at the specified URL. You can:</p>
+                                    <ul class="list-disc list-inside mt-2 space-y-1">
+                                        <li>Continue setup and configure AI later in Settings</li>
+                                        <li>Install Ollama and try again</li>
+                                        <li>Use the platform without AI features for now</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- AI Features Info -->
+                <div class="mb-6">
+                    <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">AI Coach Features</h4>
+                    <div class="bg-blue-50 dark:bg-blue-900 rounded-md p-4">
+                        <div class="text-sm text-blue-700 dark:text-blue-300">
+                            <p class="mb-2">Your AI nutrition coach will help you with:</p>
+                            <ul class="list-disc list-inside space-y-1">
+                                <li>Personalized meal recommendations based on your goals</li>
+                                <li>Food photo analysis and automatic logging</li>
+                                <li>Nutrition advice tailored to your preferences</li>
+                                <li>Progress tracking and goal adjustments</li>
+                                <li>Recipe suggestions and meal planning</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <div class="flex justify-between pt-6">
+                    <a href="{{ url_for('onboarding.skip_onboarding') }}" 
+                       class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
+                        Skip Setup
+                    </a>
+                    
+                    {{ form.submit(class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500") }}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Installation Help -->
+    <div class="mt-6 bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <i class="fas fa-download text-gray-400"></i>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Need to Install Ollama?
+                </h3>
+                <div class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                    <p>If you don't have Ollama installed, you can:</p>
+                    <ul class="list-disc list-inside mt-2 space-y-1">
+                        <li>Visit <a href="https://ollama.ai" target="_blank" class="text-indigo-600 hover:text-indigo-500">ollama.ai</a> for installation instructions</li>
+                        <li>Run: <code class="bg-gray-200 dark:bg-gray-700 px-1 rounded">curl -fsSL https://ollama.ai/install.sh | sh</code></li>
+                        <li>Pull a model: <code class="bg-gray-200 dark:bg-gray-700 px-1 rounded">ollama pull llama3.1</code></li>
+                    </ul>
+                    <p class="mt-2">You can always configure AI features later in your Settings.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

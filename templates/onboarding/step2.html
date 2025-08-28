@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}Setup - Goals - NutriCoach{% endblock %}
+{% block page_title %}Fitness Goals{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <!-- Progress Bar -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between text-sm font-medium text-gray-500 dark:text-gray-400">
+            <span>Step {{ step }} of {{ total_steps }}</span>
+            <span>{{ (step / total_steps * 100)|round }}% Complete</span>
+        </div>
+        <div class="mt-2 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+            <div class="bg-indigo-600 h-2 rounded-full transition-all duration-300" 
+                 style="width: {{ (step / total_steps * 100)|round }}%"></div>
+        </div>
+    </div>
+
+    <!-- Form Card -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <div class="mb-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100">
+                    Fitness Goals & Activity Level
+                </h3>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Help us calculate your calorie and macronutrient targets based on your goals.
+                </p>
+            </div>
+
+            <form method="POST" class="space-y-6">
+                {{ form.hidden_tag() }}
+
+                <!-- Activity Level -->
+                <div>
+                    {{ form.activity_level.label(class="block text-sm font-medium text-gray-700 dark:text-gray-300") }}
+                    <div class="mt-1">
+                        {{ form.activity_level(class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-gray-100") }}
+                    </div>
+                    {% if form.activity_level.errors %}
+                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.activity_level.errors[0] }}</p>
+                    {% endif %}
+                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                        This helps us calculate your daily calorie needs based on your exercise routine.
+                    </p>
+                </div>
+
+                <!-- Primary Goal -->
+                <div>
+                    {{ form.goal_type.label(class="block text-sm font-medium text-gray-700 dark:text-gray-300") }}
+                    <div class="mt-1">
+                        {{ form.goal_type(class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-gray-100") }}
+                    </div>
+                    {% if form.goal_type.errors %}
+                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.goal_type.errors[0] }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Target Weight (conditional) -->
+                <div id="target-weight-section">
+                    {{ form.target_weight_kg.label(class="block text-sm font-medium text-gray-700 dark:text-gray-300") }}
+                    <div class="mt-1 relative rounded-md shadow-sm">
+                        {{ form.target_weight_kg(class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-gray-100 pr-12") }}
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                            <span class="text-gray-500 dark:text-gray-400 sm:text-sm">kg</span>
+                        </div>
+                    </div>
+                    {% if form.target_weight_kg.errors %}
+                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.target_weight_kg.errors[0] }}</p>
+                    {% endif %}
+                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                        Optional: Set a target weight for your goal.
+                    </p>
+                </div>
+
+                <!-- Timeframe -->
+                <div id="timeframe-section">
+                    {{ form.timeframe_weeks.label(class="block text-sm font-medium text-gray-700 dark:text-gray-300") }}
+                    <div class="mt-1 relative rounded-md shadow-sm">
+                        {{ form.timeframe_weeks(class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-gray-100 pr-16") }}
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                            <span class="text-gray-500 dark:text-gray-400 sm:text-sm">weeks</span>
+                        </div>
+                    </div>
+                    {% if form.timeframe_weeks.errors %}
+                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.timeframe_weeks.errors[0] }}</p>
+                    {% endif %}
+                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                        Optional: How many weeks to reach your goal? (Recommended: 1-2 lbs per week for weight loss)
+                    </p>
+                </div>
+
+                <!-- Navigation -->
+                <div class="flex justify-between pt-6">
+                    <a href="{{ url_for('onboarding.step1') }}" 
+                       class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        Previous
+                    </a>
+                    
+                    {{ form.submit(class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500") }}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Goal Information Cards -->
+    <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div class="bg-green-50 dark:bg-green-900 rounded-lg p-4">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-chart-line text-green-400"></i>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-green-800 dark:text-green-200">
+                        Weight Loss
+                    </h3>
+                    <p class="mt-1 text-xs text-green-700 dark:text-green-300">
+                        Safe rate: 1-2 lbs/week
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-blue-50 dark:bg-blue-900 rounded-lg p-4">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-balance-scale text-blue-400"></i>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-blue-800 dark:text-blue-200">
+                        Maintenance
+                    </h3>
+                    <p class="mt-1 text-xs text-blue-700 dark:text-blue-300">
+                        Maintain current weight
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-purple-50 dark:bg-purple-900 rounded-lg p-4">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-arrow-up text-purple-400"></i>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-purple-800 dark:text-purple-200">
+                        Weight Gain
+                    </h3>
+                    <p class="mt-1 text-xs text-purple-700 dark:text-purple-300">
+                        Safe rate: 0.5-1 lb/week
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Text -->
+    <div class="mt-6 bg-blue-50 dark:bg-blue-900 rounded-lg p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <i class="fas fa-info-circle text-blue-400"></i>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-blue-800 dark:text-blue-200">
+                    How we calculate your targets
+                </h3>
+                <div class="mt-2 text-sm text-blue-700 dark:text-blue-300">
+                    <p>We use the Mifflin-St Jeor equation with your activity level to calculate your Total Daily Energy Expenditure (TDEE), then adjust based on your goals for sustainable results.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Show/hide target weight and timeframe based on goal selection
+document.addEventListener('DOMContentLoaded', function() {
+    const goalSelect = document.getElementById('goal_type');
+    const targetWeightSection = document.getElementById('target-weight-section');
+    const timeframeSection = document.getElementById('timeframe-section');
+    
+    function toggleSections() {
+        const goal = goalSelect.value;
+        if (goal === 'maintain') {
+            targetWeightSection.style.display = 'none';
+            timeframeSection.style.display = 'none';
+        } else {
+            targetWeightSection.style.display = 'block';
+            timeframeSection.style.display = 'block';
+        }
+    }
+    
+    // Initial check
+    toggleSections();
+    
+    // Listen for changes
+    goalSelect.addEventListener('change', toggleSections);
+});
+</script>
+{% endblock %}

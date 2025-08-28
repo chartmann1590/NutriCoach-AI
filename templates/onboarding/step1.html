@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Setup - Basic Information - NutriCoach{% endblock %}
+{% block page_title %}Profile Setup{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <!-- Progress Bar -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between text-sm font-medium text-gray-500 dark:text-gray-400">
+            <span>Step {{ step }} of {{ total_steps }}</span>
+            <span>{{ (step / total_steps * 100)|round }}% Complete</span>
+        </div>
+        <div class="mt-2 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+            <div class="bg-indigo-600 h-2 rounded-full transition-all duration-300" 
+                 style="width: {{ (step / total_steps * 100)|round }}%"></div>
+        </div>
+    </div>
+
+    <!-- Form Card -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <div class="mb-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100">
+                    Basic Information
+                </h3>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Tell us about yourself to get personalized nutrition recommendations.
+                </p>
+            </div>
+
+            <form method="POST" class="space-y-6">
+                {{ form.hidden_tag() }}
+
+                <!-- Name -->
+                <div>
+                    {{ form.name.label(class="block text-sm font-medium text-gray-700 dark:text-gray-300") }}
+                    <div class="mt-1">
+                        {{ form.name(class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-gray-100") }}
+                    </div>
+                    {% if form.name.errors %}
+                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.name.errors[0] }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Age and Sex -->
+                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                    <div>
+                        {{ form.age.label(class="block text-sm font-medium text-gray-700 dark:text-gray-300") }}
+                        <div class="mt-1">
+                            {{ form.age(class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-gray-100") }}
+                        </div>
+                        {% if form.age.errors %}
+                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.age.errors[0] }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        {{ form.sex.label(class="block text-sm font-medium text-gray-700 dark:text-gray-300") }}
+                        <div class="mt-1">
+                            {{ form.sex(class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-gray-100") }}
+                        </div>
+                        {% if form.sex.errors %}
+                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.sex.errors[0] }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Height and Weight -->
+                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                    <div>
+                        {{ form.height_cm.label(class="block text-sm font-medium text-gray-700 dark:text-gray-300") }}
+                        <div class="mt-1 relative rounded-md shadow-sm">
+                            {{ form.height_cm(class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-gray-100 pr-12") }}
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500 dark:text-gray-400 sm:text-sm">cm</span>
+                            </div>
+                        </div>
+                        {% if form.height_cm.errors %}
+                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.height_cm.errors[0] }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        {{ form.weight_kg.label(class="block text-sm font-medium text-gray-700 dark:text-gray-300") }}
+                        <div class="mt-1 relative rounded-md shadow-sm">
+                            {{ form.weight_kg(class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-gray-100 pr-12") }}
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500 dark:text-gray-400 sm:text-sm">kg</span>
+                            </div>
+                        </div>
+                        {% if form.weight_kg.errors %}
+                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.weight_kg.errors[0] }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <div class="flex justify-between pt-6">
+                    <a href="{{ url_for('onboarding.skip_onboarding') }}" 
+                       class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
+                        Skip Setup
+                    </a>
+                    
+                    {{ form.submit(class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500") }}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Help Text -->
+    <div class="mt-6 bg-blue-50 dark:bg-blue-900 rounded-lg p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <i class="fas fa-info-circle text-blue-400"></i>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-blue-800 dark:text-blue-200">
+                    Why do we need this information?
+                </h3>
+                <div class="mt-2 text-sm text-blue-700 dark:text-blue-300">
+                    <p>This basic information helps us calculate your daily calorie and macronutrient targets using scientifically-backed formulas. Your data is kept private and secure.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

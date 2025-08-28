@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+
+{% block title %}NutriCoach - AI-Powered Nutrition Tracking{% endblock %}
+
+{% block content %}
+<!-- Authenticated users with profile see this -->
+{% endblock %}
+
+{% block auth_content %}
+<div class="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <!-- Hero Section -->
+    <div class="relative overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+            <div class="text-center">
+                <h1 class="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
+                    Welcome to <span class="text-indigo-600 dark:text-indigo-400">NutriCoach</span>
+                </h1>
+                <p class="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
+                    Your AI-powered nutrition companion. Track your meals, get personalized recommendations, 
+                    and achieve your health goals with intelligent food analysis and coaching.
+                </p>
+                
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a href="{{ url_for('auth.register') }}" 
+                       class="inline-flex items-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 transition-colors duration-200">
+                        <i class="fas fa-user-plus mr-2"></i>
+                        Get Started
+                    </a>
+                    <a href="{{ url_for('auth.login') }}" 
+                       class="inline-flex items-center px-8 py-3 border border-gray-300 dark:border-gray-600 text-base font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200">
+                        <i class="fas fa-sign-in-alt mr-2"></i>
+                        Sign In
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="py-24 bg-white dark:bg-gray-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+                    Powerful Features for Your Nutrition Journey
+                </h2>
+                <p class="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+                    NutriCoach combines cutting-edge AI technology with comprehensive nutrition tracking 
+                    to help you make informed decisions about your health.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- AI Coach -->
+                <div class="bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-gray-700 dark:to-gray-600 rounded-xl p-6 hover:shadow-lg transition-shadow duration-200">
+                    <div class="text-indigo-600 dark:text-indigo-400 text-3xl mb-4">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-3">AI Nutrition Coach</h3>
+                    <p class="text-gray-600 dark:text-gray-300">
+                        Get personalized nutrition advice, meal suggestions, and answers to your food questions 
+                        from our intelligent AI coach powered by Ollama.
+                    </p>
+                </div>
+
+                <!-- Food Recognition -->
+                <div class="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-gray-700 dark:to-gray-600 rounded-xl p-6 hover:shadow-lg transition-shadow duration-200">
+                    <div class="text-green-600 dark:text-green-400 text-3xl mb-4">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-3">Photo Food Logging</h3>
+                    <p class="text-gray-600 dark:text-gray-300">
+                        Simply take a photo of your meal and our AI vision model will identify foods 
+                        and estimate nutritional content automatically.
+                    </p>
+                </div>
+
+                <!-- Nutrition Database -->
+                <div class="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-700 dark:to-gray-600 rounded-xl p-6 hover:shadow-lg transition-shadow duration-200">
+                    <div class="text-purple-600 dark:text-purple-400 text-3xl mb-4">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-3">Comprehensive Database</h3>
+                    <p class="text-gray-600 dark:text-gray-300">
+                        Access nutrition data from Open Food Facts and Wikipedia, with barcode scanning 
+                        for easy product lookup and logging.
+                    </p>
+                </div>
+
+                <!-- Progress Tracking -->
+                <div class="bg-gradient-to-br from-orange-50 to-red-50 dark:from-gray-700 dark:to-gray-600 rounded-xl p-6 hover:shadow-lg transition-shadow duration-200">
+                    <div class="text-orange-600 dark:text-orange-400 text-3xl mb-4">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-3">Progress Analytics</h3>
+                    <p class="text-gray-600 dark:text-gray-300">
+                        Visualize your nutrition trends, track your goals, and get insights into your 
+                        eating patterns with detailed charts and analytics.
+                    </p>
+                </div>
+
+                <!-- Personalized Goals -->
+                <div class="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-gray-700 dark:to-gray-600 rounded-xl p-6 hover:shadow-lg transition-shadow duration-200">
+                    <div class="text-blue-600 dark:text-blue-400 text-3xl mb-4">
+                        <i class="fas fa-bullseye"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-3">Personalized Goals</h3>
+                    <p class="text-gray-600 dark:text-gray-300">
+                        Set custom nutrition goals based on your age, activity level, and objectives. 
+                        Get daily targets that adapt to your lifestyle.
+                    </p>
+                </div>
+
+                <!-- Privacy First -->
+                <div class="bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-700 dark:to-gray-600 rounded-xl p-6 hover:shadow-lg transition-shadow duration-200">
+                    <div class="text-gray-600 dark:text-gray-400 text-3xl mb-4">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-3">Privacy & Security</h3>
+                    <p class="text-gray-600 dark:text-gray-300">
+                        Your data stays private and secure. Use your own Ollama instance for AI features 
+                        and maintain full control over your nutrition information.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- How It Works Section -->
+    <div class="py-24 bg-gray-50 dark:bg-gray-900">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+                    How NutriCoach Works
+                </h2>
+                <p class="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+                    Get started with nutrition tracking in just a few simple steps.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="text-center">
+                    <div class="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 text-white rounded-full text-2xl font-bold mb-4">
+                        1
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-3">Set Up Your Profile</h3>
+                    <p class="text-gray-600 dark:text-gray-300">
+                        Tell us about your goals, dietary preferences, and lifestyle to get personalized recommendations.
+                    </p>
+                </div>
+
+                <div class="text-center">
+                    <div class="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 text-white rounded-full text-2xl font-bold mb-4">
+                        2
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-3">Log Your Meals</h3>
+                    <p class="text-gray-600 dark:text-gray-300">
+                        Use photo recognition, barcode scanning, or manual entry to track your food intake effortlessly.
+                    </p>
+                </div>
+
+                <div class="text-center">
+                    <div class="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 text-white rounded-full text-2xl font-bold mb-4">
+                        3
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-3">Get AI Insights</h3>
+                    <p class="text-gray-600 dark:text-gray-300">
+                        Receive personalized coaching, meal suggestions, and progress insights from your AI nutrition coach.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CTA Section -->
+    <div class="py-24 bg-indigo-600 dark:bg-indigo-800">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-3xl font-bold text-white mb-4">
+                Ready to Transform Your Nutrition?
+            </h2>
+            <p class="text-xl text-indigo-100 mb-8">
+                Join thousands of users who are already achieving their health goals with NutriCoach.
+            </p>
+            <a href="{{ url_for('auth.register') }}" 
+               class="inline-flex items-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-indigo-600 bg-white hover:bg-gray-50 transition-colors duration-200">
+                <i class="fas fa-rocket mr-2"></i>
+                Start Your Journey Today
+            </a>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="col-span-1 md:col-span-2">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">NutriCoach</h3>
+                    <p class="text-gray-600 dark:text-gray-300 mb-4">
+                        AI-powered nutrition tracking that respects your privacy and helps you achieve your health goals.
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                            <i class="fab fa-github text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                            <i class="fab fa-twitter text-xl"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">
+                        Features
+                    </h4>
+                    <ul class="space-y-2">
+                        <li><a href="{{ url_for('coach.index') }}" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">AI Coaching</a></li>
+                        <li><a href="{{ url_for('main.photo_upload') }}" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">Photo Recognition</a></li>
+                        <li><a href="{{ url_for('main.search_nutrition') }}" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">Nutrition Database</a></li>
+                        <li><a href="{{ url_for('main.progress') }}" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">Progress Tracking</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">
+                        Support
+                    </h4>
+                    <ul class="space-y-2">
+                        <li><a href="{{ url_for('main.disclaimer') }}" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">Medical Disclaimer</a></li>
+                        <li><a href="{{ url_for('main.privacy') }}" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">Privacy Policy</a></li>
+                        <li><a href="{{ url_for('main.terms') }}" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">Terms of Service</a></li>
+                        <li><a href="{{ url_for('main.help_center') }}" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">Help Center</a></li>
+                        <li><a href="{{ url_for('admin.dashboard') }}" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">Admin Panel</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
+                <p class="text-center text-gray-400 dark:text-gray-500">
+                    © 2024 NutriCoach. Built with Flask, powered by Ollama AI.
+                </p>
+            </div>
+        </div>
+    </footer>
+</div>
+{% endblock %}

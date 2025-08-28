@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Privacy Settings - NutriCoach{% endblock %}
+{% block page_title %}Privacy & Data Settings{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="space-y-6">
+        <!-- Data Export Section -->
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100 mb-4">
+                    Data Export
+                </h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                    Download your personal data in CSV format.
+                </p>
+                <div class="flex space-x-3">
+                    <a href="/api/export/logs.csv" 
+                       class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                        <i class="fas fa-download mr-2"></i>
+                        Export Food Logs
+                    </a>
+                    <a href="/api/export/weigh-ins.csv" 
+                       class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                        <i class="fas fa-download mr-2"></i>
+                        Export Weight Data
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Retention Section -->
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100 mb-4">
+                    Data Retention
+                </h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                    Your data is stored securely and only used to provide you with personalized nutrition tracking and recommendations.
+                </p>
+                <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-2">
+                    <li class="flex items-start">
+                        <i class="fas fa-check text-green-500 mr-2 mt-0.5"></i>
+                        Food logs are retained to provide historical tracking
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-check text-green-500 mr-2 mt-0.5"></i>
+                        Weight measurements help track progress over time
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-check text-green-500 mr-2 mt-0.5"></i>
+                        AI conversations are stored to improve recommendations
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Privacy Controls Section -->
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100 mb-4">
+                    Privacy Controls
+                </h3>
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100">Data Analytics</h4>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Allow anonymous usage analytics to improve the app</p>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="analytics" 
+                                   class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" checked>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100">AI Model Training</h4>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Use your anonymized data to improve AI recommendations</p>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="ai-training" 
+                                   class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" checked>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Account Deletion Section -->
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-lg leading-6 font-medium text-red-600 dark:text-red-400 mb-4">
+                    Delete Account
+                </h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                    Permanently delete your account and all associated data. This action cannot be undone.
+                </p>
+                <button type="button" 
+                        onclick="confirmDelete()"
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700">
+                    <i class="fas fa-trash mr-2"></i>
+                    Delete Account
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete() {
+    if (confirm('Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently deleted.')) {
+        if (confirm('This will permanently delete all your food logs, weight data, and settings. Type "DELETE" to confirm.')) {
+            // In a real implementation, this would make an API call to delete the account
+            alert('Account deletion functionality is not yet implemented. Please contact support if you need to delete your account.');
+        }
+    }
+}
+
+// Save privacy preferences
+document.getElementById('analytics').addEventListener('change', function() {
+    // In a real implementation, this would save the preference
+    console.log('Analytics preference changed:', this.checked);
+});
+
+document.getElementById('ai-training').addEventListener('change', function() {
+    // In a real implementation, this would save the preference
+    console.log('AI training preference changed:', this.checked);
+});
+</script>
+{% endblock %}

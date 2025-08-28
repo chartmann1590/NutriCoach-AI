@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - NutriCoach{% endblock %}
+{% block page_title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- System Health Status -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">System Health</h3>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="text-center">
+                <div class="text-2xl mb-2">
+                    {% if health.db_connected %}
+                        <i class="fas fa-database text-green-500"></i>
+                    {% else %}
+                        <i class="fas fa-database text-red-500"></i>
+                    {% endif %}
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Database</p>
+                <p class="text-xs {% if health.db_connected %}text-green-600{% else %}text-red-600{% endif %}">
+                    {% if health.db_connected %}Connected{% else %}Disconnected{% endif %}
+                </p>
+            </div>
+            
+            <div class="text-center">
+                <div class="text-2xl mb-2">
+                    {% if health.ollama_status %}
+                        <i class="fas fa-robot text-green-500"></i>
+                    {% else %}
+                        <i class="fas fa-robot text-red-500"></i>
+                    {% endif %}
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Ollama</p>
+                <p class="text-xs {% if health.ollama_status %}text-green-600{% else %}text-red-600{% endif %}">
+                    {% if health.ollama_status %}Online{% else %}Offline{% endif %}
+                </p>
+            </div>
+            
+            <div class="text-center">
+                <div class="text-2xl mb-2">
+                    {% if health.disk_usage and health.disk_usage.percent < 90 %}
+                        <i class="fas fa-hdd text-green-500"></i>
+                    {% else %}
+                        <i class="fas fa-hdd text-yellow-500"></i>
+                    {% endif %}
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Disk Space</p>
+                {% if health.disk_usage %}
+                    <p class="text-xs">{{ health.disk_usage.percent }}% used</p>
+                {% else %}
+                    <p class="text-xs text-gray-500">Unknown</p>
+                {% endif %}
+            </div>
+            
+            <div class="text-center">
+                <div class="text-2xl mb-2">
+                    {% if health.last_backup %}
+                        <i class="fas fa-backup text-green-500"></i>
+                    {% else %}
+                        <i class="fas fa-backup text-gray-400"></i>
+                    {% endif %}
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Last Backup</p>
+                <p class="text-xs">
+                    {% if health.last_backup %}{{ health.last_backup }}{% else %}No backup{% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-users text-indigo-600 text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Users</p>
+                    <p class="text-2xl font-semibold text-gray-900 dark:text-gray-100">{{ stats.total_users }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-user-check text-green-600 text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Active Users</p>
+                    <p class="text-2xl font-semibold text-gray-900 dark:text-gray-100">{{ stats.active_users }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-user-shield text-purple-600 text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Admin Users</p>
+                    <p class="text-2xl font-semibold text-gray-900 dark:text-gray-100">{{ stats.admin_users }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-utensils text-orange-600 text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Food Logs</p>
+                    <p class="text-2xl font-semibold text-gray-900 dark:text-gray-100">{{ stats.total_food_logs }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Registration Chart -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">User Registrations (Last 30 Days)</h3>
+        <canvas id="registrationChart" width="400" height="100"></canvas>
+    </div>
+
+    <!-- Recent System Logs -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-600">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Recent System Activity</h3>
+        </div>
+        <div class="divide-y divide-gray-200 dark:divide-gray-600">
+            {% for log in stats.recent_logs %}
+                <div class="px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                {% if log.level == 'error' %}
+                                    <i class="fas fa-exclamation-circle text-red-500"></i>
+                                {% elif log.level == 'warning' %}
+                                    <i class="fas fa-exclamation-triangle text-yellow-500"></i>
+                                {% else %}
+                                    <i class="fas fa-info-circle text-blue-500"></i>
+                                {% endif %}
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ log.action.replace('_', ' ').title() }}</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">{{ log.message }}</p>
+                            </div>
+                        </div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">
+                            {{ log.created_at.strftime('%H:%M') }}
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                    No recent activity
+                </div>
+            {% endfor %}
+        </div>
+        <div class="px-6 py-3 bg-gray-50 dark:bg-gray-700">
+            <a href="{{ url_for('admin.logs') }}" class="text-sm text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
+                View all logs →
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Quick Actions</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <a href="{{ url_for('admin.create_user') }}" 
+               class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                <i class="fas fa-user-plus mr-2"></i>
+                Create User
+            </a>
+            
+            <a href="{{ url_for('admin.ollama_settings') }}" 
+               class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
+                <i class="fas fa-robot mr-2"></i>
+                Configure Ollama
+            </a>
+            
+            <a href="{{ url_for('admin.maintenance') }}" 
+               class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
+                <i class="fas fa-tools mr-2"></i>
+                System Maintenance
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+// User Registration Chart
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if Chart.js is available
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js is not loaded');
+        document.getElementById('registrationChart').style.display = 'none';
+        return;
+    }
+    
+    try {
+        const ctx = document.getElementById('registrationChart').getContext('2d');
+        const registrationData = {{ daily_registrations | tojson }};
+
+        const chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: registrationData.map(d => d.date),
+        datasets: [{
+            label: 'New Users',
+            data: registrationData.map(d => d.count),
+            borderColor: 'rgb(99, 102, 241)',
+            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+            tension: 0.4
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        }
+    }
+});
+    } catch (error) {
+        console.error('Error creating chart:', error);
+        document.getElementById('registrationChart').style.display = 'none';
+    }
+});
+</script>
+{% endblock %}

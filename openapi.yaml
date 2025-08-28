@@ -1,0 +1,700 @@
+openapi: 3.0.3
+info:
+  title: NutriCoach API
+  description: |
+    NutriCoach is an AI-powered nutrition tracking application. This API provides endpoints for food logging, 
+    AI coaching, nutrition analysis, and progress tracking.
+    
+    ## Authentication
+    All endpoints except `/api/healthz` require user authentication via session cookies.
+    
+    ## Rate Limiting
+    API endpoints are rate-limited to prevent abuse. Limits vary by endpoint type.
+    
+    ## Data Formats
+    - All timestamps are in ISO 8601 format
+    - Weights are in kilograms
+    - Volumes are in milliliters
+    - Nutrition values are per serving unless specified otherwise
+  version: 1.0.0
+  contact:
+    name: NutriCoach Support
+    url: https://github.com/your-repo/nutricoach
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:5001/api
+    description: Development server (Docker host port 5001 -> container 5000)
+  - url: https://your-domain.com/api
+    description: Production server
+
+paths:
+  /healthz:
+    get:
+      summary: Health check endpoint
+      description: Check if the API is running and healthy
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /logs:
+    get:
+      summary: Get food logs
+      description: Retrieve food logs for the authenticated user
+      tags:
+        - Food Logging
+      parameters:
+        - name: date
+          in: query
+          description: Filter logs by date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: limit
+          in: query
+          description: Maximum number of logs to return
+          schema:
+            type: integer
+            default: 50
+            maximum: 100
+      responses:
+        '200':
+          description: List of food logs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  logs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FoodLog'
+                  count:
+                    type: integer
+
+    post:
+      summary: Create food log entry
+      description: Log a new food item
+      tags:
+        - Food Logging
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFoodLog'
+      responses:
+        '201':
+          description: Food log created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  message:
+                    type: string
+
+  /logs/{logId}:
+    delete:
+      summary: Delete food log entry
+      description: Remove a food log entry
+      tags:
+        - Food Logging
+      parameters:
+        - name: logId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Food log deleted successfully
+        '404':
+          description: Food log not found
+
+  /search_nutrition:
+    get:
+      summary: Search nutrition database
+      description: Search for food items in nutrition databases
+      tags:
+        - Nutrition Search
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Search query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  query:
+                    type: string
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/NutritionSearchResult'
+                  count:
+                    type: integer
+
+  /search_barcode:
+    get:
+      summary: Search by barcode
+      description: Look up food item by barcode
+      tags:
+        - Nutrition Search
+      parameters:
+        - name: barcode
+          in: query
+          required: true
+          description: Product barcode
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Product found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    $ref: '#/components/schemas/NutritionSearchResult'
+        '404':
+          description: Product not found
+
+  /photo/upload:
+    post:
+      summary: Upload food photo
+      description: Upload and analyze a food photo using AI
+      tags:
+        - Photo Analysis
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                photo:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Photo uploaded and analyzed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  photo_id:
+                    type: integer
+                  filename:
+                    type: string
+                  candidates:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FoodCandidate'
+
+  /coach/chat:
+    post:
+      summary: Chat with AI coach
+      description: Send message to AI nutrition coach
+      tags:
+        - AI Coach
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+              required:
+                - message
+      responses:
+        '200':
+          description: Streaming chat response
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /coach/clear-history:
+    delete:
+      summary: Clear AI coach chat history
+      description: Delete all coach chat messages for the authenticated user
+      tags:
+        - AI Coach
+      responses:
+        '200':
+          description: Chat history cleared
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  deleted_count:
+                    type: integer
+
+  /weigh-in:
+    post:
+      summary: Record weight measurement
+      description: Log a new weight measurement
+      tags:
+        - Health Tracking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                weight_kg:
+                  type: number
+                  format: float
+              required:
+                - weight_kg
+      responses:
+        '201':
+          description: Weight recorded successfully
+
+  /water-intake:
+    post:
+      summary: Record water intake
+      description: Log water consumption
+      tags:
+        - Health Tracking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ml:
+                  type: integer
+              required:
+                - ml
+      responses:
+        '201':
+          description: Water intake recorded successfully
+
+  /analytics/nutrition-trends:
+    get:
+      summary: Get nutrition trends
+      description: Retrieve nutrition trend data for charts
+      tags:
+        - Analytics
+      parameters:
+        - name: days
+          in: query
+          description: Number of days to include
+          schema:
+            type: integer
+            default: 30
+            maximum: 365
+      responses:
+        '200':
+          description: Nutrition trend data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NutritionTrends'
+
+  /analytics/weight-trends:
+    get:
+      summary: Get weight trends
+      description: Retrieve weight trend data for charts
+      tags:
+        - Analytics
+      parameters:
+        - name: days
+          in: query
+          description: Number of days to include
+          schema:
+            type: integer
+            default: 90
+            maximum: 365
+      responses:
+        '200':
+          description: Weight trend data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WeightTrends'
+
+  /analytics/dashboard:
+    get:
+      summary: Get dashboard data
+      description: Retrieve comprehensive dashboard analytics
+      tags:
+        - Analytics
+      responses:
+        '200':
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardData'
+
+  /export/logs.csv:
+    get:
+      summary: Export food logs as CSV
+      description: Download food logs in CSV format
+      tags:
+        - Export
+      parameters:
+        - name: from
+          in: query
+          description: Start date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          description: End date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: CSV file
+          content:
+            text/csv:
+              schema:
+                type: string
+
+  /models/list:
+    get:
+      summary: List available AI models
+      description: Get list of available Ollama models
+      tags:
+        - AI Models
+      responses:
+        '200':
+          description: List of available models
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  models:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AIModel'
+                  count:
+                    type: integer
+
+  /models/pull:
+    post:
+      summary: Pull AI model
+      description: Download a new AI model
+      tags:
+        - AI Models
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                model:
+                  type: string
+              required:
+                - model
+      responses:
+        '200':
+          description: Model pulled successfully
+
+  /settings/test_ollama:
+    post:
+      summary: Test Ollama connection
+      description: Test connectivity to an Ollama server URL
+      tags:
+        - AI Models
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ollama_url:
+                  type: string
+              required:
+                - ollama_url
+      responses:
+        '200':
+          description: Connection test result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  connected:
+                    type: boolean
+                  url:
+                    type: string
+
+components:
+  schemas:
+    FoodLog:
+      type: object
+      properties:
+        id:
+          type: integer
+        food_name:
+          type: string
+        meal:
+          type: string
+          enum: [breakfast, lunch, dinner, snack]
+        grams:
+          type: number
+          format: float
+        calories:
+          type: number
+          format: float
+        protein_g:
+          type: number
+          format: float
+        carbs_g:
+          type: number
+          format: float
+        fat_g:
+          type: number
+          format: float
+        fiber_g:
+          type: number
+          format: float
+        sugar_g:
+          type: number
+          format: float
+        sodium_mg:
+          type: number
+          format: float
+        source:
+          type: string
+          enum: [manual, vision, barcode]
+        logged_at:
+          type: string
+          format: date-time
+
+    CreateFoodLog:
+      type: object
+      required:
+        - custom_name
+        - meal
+        - grams
+        - calories
+      properties:
+        custom_name:
+          type: string
+        meal:
+          type: string
+          enum: [breakfast, lunch, dinner, snack]
+        grams:
+          type: number
+          format: float
+        calories:
+          type: number
+          format: float
+        protein_g:
+          type: number
+          format: float
+          default: 0
+        carbs_g:
+          type: number
+          format: float
+          default: 0
+        fat_g:
+          type: number
+          format: float
+          default: 0
+        fiber_g:
+          type: number
+          format: float
+          default: 0
+        sugar_g:
+          type: number
+          format: float
+          default: 0
+        sodium_mg:
+          type: number
+          format: float
+          default: 0
+        source:
+          type: string
+          enum: [manual, vision, barcode]
+          default: manual
+
+    NutritionSearchResult:
+      type: object
+      properties:
+        source:
+          type: string
+          enum: [openfoodfacts, wikipedia]
+        title:
+          type: string
+        url:
+          type: string
+        snippet:
+          type: string
+        nutrition:
+          type: object
+          properties:
+            calories_per_100g:
+              type: number
+            protein_per_100g:
+              type: number
+            carbs_per_100g:
+              type: number
+            fat_per_100g:
+              type: number
+        barcode:
+          type: string
+        image_url:
+          type: string
+
+    FoodCandidate:
+      type: object
+      properties:
+        name:
+          type: string
+        portion_grams:
+          type: number
+          format: float
+        confidence:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        nutrition:
+          type: object
+        search_results:
+          type: array
+          items:
+            $ref: '#/components/schemas/NutritionSearchResult'
+
+    NutritionTrends:
+      type: object
+      properties:
+        dates:
+          type: array
+          items:
+            type: string
+            format: date
+        calories:
+          type: array
+          items:
+            type: number
+        protein:
+          type: array
+          items:
+            type: number
+        carbs:
+          type: array
+          items:
+            type: number
+        fat:
+          type: array
+          items:
+            type: number
+
+    WeightTrends:
+      type: object
+      properties:
+        dates:
+          type: array
+          items:
+            type: string
+            format: date
+        weights:
+          type: array
+          items:
+            type: number
+        trend:
+          type: array
+          items:
+            type: number
+
+    DashboardData:
+      type: object
+      properties:
+        today:
+          type: object
+        weekly:
+          type: object
+        meal_distribution:
+          type: object
+        macro_distribution:
+          type: object
+        streaks:
+          type: object
+        top_foods:
+          type: array
+
+    AIModel:
+      type: object
+      properties:
+        name:
+          type: string
+        size:
+          type: integer
+        modified_at:
+          type: string
+          format: date-time
+
+  securitySchemes:
+    sessionAuth:
+      type: apiKey
+      in: cookie
+      name: session
+
+security:
+  - sessionAuth: []
+
+tags:
+  - name: Health
+    description: Health check and system status
+  - name: Food Logging
+    description: Food intake tracking and management
+  - name: Nutrition Search
+    description: Food database search and lookup
+  - name: Photo Analysis
+    description: AI-powered food photo recognition
+  - name: AI Coach
+    description: Personalized nutrition coaching
+  - name: Health Tracking
+    description: Weight and water intake tracking
+  - name: Analytics
+    description: Progress tracking and data analysis
+  - name: Export
+    description: Data export functionality
+  - name: AI Models
+    description: AI model management

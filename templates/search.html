@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}Food Search - NutriCoach{% endblock %}
+{% block page_title %}Food Search{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <div class="mb-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100">
+                    Search Nutrition Database
+                </h3>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Find nutrition information for foods from Open Food Facts and Wikipedia.
+                </p>
+            </div>
+
+            <!-- Search Form -->
+            <div class="mb-6">
+                <div class="flex space-x-4">
+                    <div class="flex-1">
+                        <input type="text" 
+                               id="search-query"
+                               placeholder="Search for food items..."
+                               class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-gray-100">
+                    </div>
+                    <button onclick="searchFood()" 
+                            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                        <i class="fas fa-search mr-2"></i>
+                        Search
+                    </button>
+                </div>
+            </div>
+
+            <!-- Barcode Search -->
+            <div class="mb-6 border-t border-gray-200 dark:border-gray-600 pt-6">
+                <h4 class="text-md font-medium text-gray-900 dark:text-gray-100 mb-3">
+                    Barcode Search
+                </h4>
+                <div class="flex space-x-4">
+                    <div class="flex-1">
+                        <input type="text" 
+                               id="barcode-query"
+                               placeholder="Enter barcode number..."
+                               class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-gray-100">
+                    </div>
+                    <button onclick="searchBarcode()" 
+                            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
+                        <i class="fas fa-barcode mr-2"></i>
+                        Search Barcode
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loading Spinner -->
+            <div id="loading" class="hidden text-center py-4">
+                <div class="inline-flex items-center">
+                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Searching...
+                </div>
+            </div>
+
+            <!-- Search Results -->
+            <div id="search-results" class="space-y-4"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+function searchFood() {
+    const query = document.getElementById('search-query').value.trim();
+    if (!query) return;
+    
+    showLoading();
+    
+    fetch(`/api/search_nutrition?q=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            displayResults(data.results || []);
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Search error:', error);
+            displayError('Search failed. Please try again.');
+        });
+}
+
+function searchBarcode() {
+    const barcode = document.getElementById('barcode-query').value.trim();
+    if (!barcode) return;
+    
+    showLoading();
+    
+    fetch(`/api/search_barcode?barcode=${encodeURIComponent(barcode)}`)
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            if (data.result) {
+                displayResults([data.result]);
+            } else {
+                displayError('Product not found for this barcode.');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Barcode search error:', error);
+            displayError('Barcode search failed. Please try again.');
+        });
+}
+
+function showLoading() {
+    document.getElementById('loading').classList.remove('hidden');
+    document.getElementById('search-results').innerHTML = '';
+}
+
+function hideLoading() {
+    document.getElementById('loading').classList.add('hidden');
+}
+
+function displayResults(results) {
+    const container = document.getElementById('search-results');
+    
+    if (!results || results.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-8">
+                <i class="fas fa-search text-4xl text-gray-400 mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No results found</h3>
+                <p class="text-gray-500 dark:text-gray-400">Try different search terms or check the spelling.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = results.map(result => `
+        <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700">
+            <div class="flex justify-between items-start">
+                <div class="flex-1">
+                    <h4 class="text-lg font-medium text-gray-900 dark:text-gray-100">
+                        ${result.title}
+                    </h4>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                        Source: ${result.source}
+                    </p>
+                    ${result.snippet ? `<p class="text-sm text-gray-600 dark:text-gray-300 mb-3">${result.snippet}</p>` : ''}
+                    
+                    ${result.nutrition ? `
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                            <div class="bg-red-100 dark:bg-red-900 px-2 py-1 rounded">
+                                <strong>Calories:</strong> ${result.nutrition.calories_per_100g || 0}/100g
+                            </div>
+                            <div class="bg-blue-100 dark:bg-blue-900 px-2 py-1 rounded">
+                                <strong>Protein:</strong> ${result.nutrition.protein_per_100g || 0}g/100g
+                            </div>
+                            <div class="bg-yellow-100 dark:bg-yellow-900 px-2 py-1 rounded">
+                                <strong>Carbs:</strong> ${result.nutrition.carbs_per_100g || 0}g/100g
+                            </div>
+                            <div class="bg-green-100 dark:bg-green-900 px-2 py-1 rounded">
+                                <strong>Fat:</strong> ${result.nutrition.fat_per_100g || 0}g/100g
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+                
+                <div class="ml-4 flex-shrink-0">
+                    <button onclick="addToLog('${result.title}', ${JSON.stringify(result.nutrition || {}).replace(/"/g, '&quot;')})" 
+                            class="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-white bg-indigo-600 hover:bg-indigo-700">
+                        <i class="fas fa-plus mr-1"></i>
+                        Add to Log
+                    </button>
+                    ${result.url ? `
+                        <a href="${result.url}" target="_blank" 
+                           class="ml-2 inline-flex items-center px-3 py-1 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
+                            <i class="fas fa-external-link-alt mr-1"></i>
+                            View Source
+                        </a>
+                    ` : ''}
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function displayError(message) {
+    document.getElementById('search-results').innerHTML = `
+        <div class="text-center py-8">
+            <i class="fas fa-exclamation-triangle text-4xl text-red-400 mb-4"></i>
+            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Error</h3>
+            <p class="text-gray-500 dark:text-gray-400">${message}</p>
+        </div>
+    `;
+}
+
+function addToLog(foodName, nutrition) {
+    // Pre-fill food logging form with search result
+    const url = new URL('/log', window.location.origin);
+    url.searchParams.set('name', foodName);
+    if (nutrition.calories_per_100g) url.searchParams.set('calories', nutrition.calories_per_100g);
+    if (nutrition.protein_per_100g) url.searchParams.set('protein', nutrition.protein_per_100g);
+    if (nutrition.carbs_per_100g) url.searchParams.set('carbs', nutrition.carbs_per_100g);
+    if (nutrition.fat_per_100g) url.searchParams.set('fat', nutrition.fat_per_100g);
+    
+    window.location.href = url.toString();
+}
+
+// Enter key support
+document.getElementById('search-query').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        searchFood();
+    }
+});
+
+document.getElementById('barcode-query').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        searchBarcode();
+    }
+});
+</script>
+{% endblock %}

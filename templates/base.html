@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en" x-data="{ darkMode: localStorage.getItem('darkMode') === 'true' }" x-bind:class="{ 'dark': darkMode }">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}NutriCoach - AI-Powered Nutrition Tracking{% endblock %}</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    
+    <!-- Alpine.js -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <style>
+        .sidebar-transition {
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .toast {
+            animation: slideInRight 0.3s ease-in-out;
+        }
+        
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .progress-ring {
+            transform: rotate(-90deg);
+        }
+        
+        .progress-ring__circle {
+            transition: stroke-dashoffset 0.35s;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+        
+        /* Custom scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.5);
+            border-radius: 3px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(156, 163, 175, 0.8);
+        }
+    </style>
+    
+    {% block head %}{% endblock %}
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300" x-data="{ sidebarOpen: false }">
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="toast max-w-sm bg-white dark:bg-gray-800 shadow-lg rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden">
+                        <div class="p-4">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0">
+                                    {% if category == 'success' %}
+                                        <i class="fas fa-check-circle text-green-400"></i>
+                                    {% elif category == 'error' %}
+                                        <i class="fas fa-exclamation-triangle text-red-400"></i>
+                                    {% elif category == 'warning' %}
+                                        <i class="fas fa-exclamation-circle text-yellow-400"></i>
+                                    {% else %}
+                                        <i class="fas fa-info-circle text-blue-400"></i>
+                                    {% endif %}
+                                </div>
+                                <div class="ml-3 w-0 flex-1 pt-0.5">
+                                    <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ message }}</p>
+                                </div>
+                                <div class="ml-4 flex-shrink-0 flex">
+                                    <button onclick="this.parentElement.parentElement.parentElement.parentElement.remove()" 
+                                            class="bg-white dark:bg-gray-800 rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                        <span class="sr-only">Close</span>
+                                        <i class="fas fa-times text-sm"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    {% if current_user.is_authenticated %}
+        <!-- Sidebar -->
+        <div class="fixed inset-y-0 left-0 z-40 w-64 bg-white dark:bg-gray-800 shadow-lg sidebar-transition"
+             x-bind:class="{ '-translate-x-full lg:translate-x-0': !sidebarOpen, 'translate-x-0': sidebarOpen }">
+            <div class="flex flex-col h-full">
+                <!-- Logo -->
+                <div class="flex items-center justify-between h-16 px-6 bg-indigo-600 dark:bg-indigo-700">
+                    <h1 class="text-xl font-bold text-white">NutriCoach</h1>
+                    <button @click="sidebarOpen = false" class="lg:hidden text-white hover:text-gray-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <!-- Navigation -->
+                <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto custom-scrollbar">
+                    <a href="{{ url_for('main.dashboard') }}" 
+                       class="flex items-center px-3 py-2 text-sm font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 {{ 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300' if request.endpoint == 'main.dashboard' else 'text-gray-700 dark:text-gray-300' }}">
+                        <i class="fas fa-tachometer-alt mr-3"></i>
+                        Dashboard
+                    </a>
+                    
+                    <a href="{{ url_for('main.log_food') }}" 
+                       class="flex items-center px-3 py-2 text-sm font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 {{ 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300' if request.endpoint == 'main.log_food' else 'text-gray-700 dark:text-gray-300' }}">
+                        <i class="fas fa-utensils mr-3"></i>
+                        Log Food
+                    </a>
+                    
+                    <a href="{{ url_for('coach.index') }}" 
+                       class="flex items-center px-3 py-2 text-sm font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 {{ 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300' if request.endpoint == 'coach.index' else 'text-gray-700 dark:text-gray-300' }}">
+                        <i class="fas fa-robot mr-3"></i>
+                        AI Coach
+                    </a>
+                    
+                    <a href="{{ url_for('main.search_nutrition') }}" 
+                       class="flex items-center px-3 py-2 text-sm font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 {{ 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300' if request.endpoint == 'main.search_nutrition' else 'text-gray-700 dark:text-gray-300' }}">
+                        <i class="fas fa-search mr-3"></i>
+                        Food Search
+                    </a>
+                    
+                    <a href="{{ url_for('main.progress') }}" 
+                       class="flex items-center px-3 py-2 text-sm font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 {{ 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300' if request.endpoint == 'main.progress' else 'text-gray-700 dark:text-gray-300' }}">
+                        <i class="fas fa-chart-line mr-3"></i>
+                        Progress
+                    </a>
+                    
+                    <a href="{{ url_for('main.photo_upload') }}" 
+                       class="flex items-center px-3 py-2 text-sm font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 {{ 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300' if request.endpoint == 'main.photo_upload' else 'text-gray-700 dark:text-gray-300' }}">
+                        <i class="fas fa-camera mr-3"></i>
+                        Photo Log
+                    </a>
+                    
+                    <div class="pt-4 mt-4 border-t border-gray-200 dark:border-gray-600">
+                        <a href="{{ url_for('settings.index') }}" 
+                           class="flex items-center px-3 py-2 text-sm font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 {{ 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300' if request.endpoint.startswith('settings.') else 'text-gray-700 dark:text-gray-300' }}">
+                            <i class="fas fa-cog mr-3"></i>
+                            Settings
+                        </a>
+                        
+                        {% if current_user.is_admin %}
+                            <a href="{{ url_for('admin.dashboard') }}" 
+                               class="flex items-center px-3 py-2 text-sm font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 {{ 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300' if request.endpoint.startswith('admin.') else 'text-red-600 dark:text-red-400' }}">
+                                <i class="fas fa-shield-alt mr-3"></i>
+                                Admin Panel
+                            </a>
+                        {% endif %}
+                    </div>
+                </nav>
+                
+                <!-- User Info -->
+                <div class="px-4 py-4 border-t border-gray-200 dark:border-gray-600">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <div class="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center">
+                                <span class="text-white text-sm font-medium">
+                                    {{ current_user.profile.name[0].upper() if current_user.profile.name else current_user.username[0].upper() }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="ml-3 flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                                {{ current_user.profile.name if current_user.profile.name else current_user.username }}
+                            </p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                {{ current_user.profile.goal_type.title() if current_user.profile.goal_type else 'User' }}
+                            </p>
+                        </div>
+                        <a href="{{ url_for('auth.logout') }}" 
+                           class="ml-2 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile sidebar overlay -->
+        <div x-show="sidebarOpen" 
+             @click="sidebarOpen = false"
+             x-transition:enter="transition-opacity ease-linear duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition-opacity ease-linear duration-300"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 bg-gray-600 bg-opacity-75 z-30 lg:hidden"></div>
+
+        <!-- Main content -->
+        <div class="lg:ml-64 h-screen flex flex-col">
+            <!-- Top bar -->
+            <div class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+                <div class="px-4 sm:px-6 lg:px-8">
+                    <div class="flex justify-between items-center h-16">
+                        <div class="flex items-center">
+                            <button @click="sidebarOpen = !sidebarOpen" 
+                                    class="lg:hidden text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                                <i class="fas fa-bars text-xl"></i>
+                            </button>
+                            
+                            <h2 class="ml-4 lg:ml-0 text-xl font-semibold text-gray-900 dark:text-gray-100">
+                                {% block page_title %}Dashboard{% endblock %}
+                            </h2>
+                        </div>
+                        
+                        <div class="flex items-center space-x-4">
+                            <!-- Quick actions -->
+                            <button onclick="showQuickLog()" 
+                                    class="p-2 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                            
+                            <!-- Dark mode toggle -->
+                            <button @click="darkMode = !darkMode; localStorage.setItem('darkMode', darkMode)" 
+                                    class="p-2 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                                <i class="fas fa-moon" x-show="!darkMode"></i>
+                                <i class="fas fa-sun" x-show="darkMode"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Page content -->
+            <main class="p-4 sm:p-6 lg:p-8 flex-1 min-h-0">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    {% else %}
+        <!-- Non-authenticated layout -->
+        <main>
+            {% block auth_content %}{% endblock %}
+        </main>
+    {% endif %}
+
+    <!-- Quick Log Modal -->
+    <div id="quick-log-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800">
+            <div class="mt-3">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Quick Log</h3>
+                    <button onclick="hideQuickLog()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="space-y-4">
+                    <!-- Weight -->
+                    <form hx-post="/api/weigh-in" hx-target="#quick-log-response" hx-swap="innerHTML">
+                        <div class="flex space-x-2">
+                            <input type="number" step="0.1" name="weight_kg" placeholder="Weight (kg)" 
+                                   class="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100">
+                            <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
+                                Log Weight
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <!-- Water -->
+                    <form hx-post="/api/water-intake" hx-target="#quick-log-response" hx-swap="innerHTML">
+                        <div class="flex space-x-2">
+                            <select name="ml" class="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100">
+                                <option value="250">Glass (250ml)</option>
+                                <option value="500">Bottle (500ml)</option>
+                                <option value="1000">Large bottle (1L)</option>
+                            </select>
+                            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                                Log Water
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <div id="quick-log-response" class="mt-4"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showQuickLog() {
+            document.getElementById('quick-log-modal').classList.remove('hidden');
+        }
+        
+        function hideQuickLog() {
+            document.getElementById('quick-log-modal').classList.add('hidden');
+        }
+        
+        // Auto-dismiss toasts after 5 seconds
+        setTimeout(() => {
+            const toasts = document.querySelectorAll('.toast');
+            toasts.forEach(toast => {
+                toast.style.transition = 'opacity 0.5s ease-out';
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 500);
+            });
+        }, 5000);
+        
+        // HTMX event handlers
+        document.body.addEventListener('htmx:afterRequest', function(evt) {
+            if (evt.detail.successful) {
+                // Refresh page data after successful API calls
+                if (evt.detail.pathInfo.pathname.startsWith('/api/')) {
+                    setTimeout(() => {
+                        if (typeof refreshDashboard === 'function') {
+                            refreshDashboard();
+                        }
+                    }, 1000);
+                }
+            }
+        });
+        
+        // Progress ring component
+        function createProgressRing(percent) {
+            const radius = 20;
+            const stroke = 4;
+            const normalizedRadius = radius - stroke * 2;
+            const circumference = normalizedRadius * 2 * Math.PI;
+            const strokeDasharray = `${circumference} ${circumference}`;
+            const strokeDashoffset = circumference - percent / 100 * circumference;
+            
+            return `
+                <svg height="${radius * 2}" width="${radius * 2}" class="progress-ring">
+                    <circle
+                        stroke="currentColor"
+                        stroke-opacity="0.2"
+                        fill="transparent"
+                        stroke-width="${stroke}"
+                        r="${normalizedRadius}"
+                        cx="${radius}"
+                        cy="${radius}"
+                    />
+                    <circle
+                        stroke="currentColor"
+                        fill="transparent"
+                        stroke-width="${stroke}"
+                        stroke-dasharray="${strokeDasharray}"
+                        style="stroke-dashoffset: ${strokeDashoffset}"
+                        r="${normalizedRadius}"
+                        cx="${radius}"
+                        cy="${radius}"
+                        class="progress-ring__circle"
+                    />
+                </svg>
+            `;
+        }
+    </script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

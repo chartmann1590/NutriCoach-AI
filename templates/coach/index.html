@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+
+{% block title %}AI Coach - NutriCoach{% endblock %}
+{% block page_title %}AI Nutrition Coach{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto h-full flex flex-col">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
+        <!-- Chat Interface -->
+        <div class="lg:col-span-2 flex flex-col min-h-0">
+            <div class="bg-white dark:bg-gray-800 shadow rounded-lg flex flex-col flex-1 min-h-0">
+                <!-- Chat Header -->
+                <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">
+                            Chat with Your AI Coach
+                        </h3>
+                        <button onclick="clearChatHistory()" 
+                                class="inline-flex items-center px-3 py-1 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                            <i class="fas fa-trash mr-1"></i>
+                            Clear History
+                        </button>
+                    </div>
+                    {% if not ollama_configured %}
+                        <div class="mt-2 bg-yellow-50 dark:bg-yellow-900 border border-yellow-200 dark:border-yellow-700 rounded-md p-2">
+                            <p class="text-sm text-yellow-800 dark:text-yellow-200">
+                                <i class="fas fa-exclamation-triangle mr-1"></i>
+                                Ollama not configured. 
+                                <a href="{{ url_for('settings.ollama') }}" class="underline">Set up AI models</a> to enable chat.
+                            </p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Chat Messages -->
+                <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar min-h-0">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="flex {{ 'justify-end' if message.role == 'user' else 'justify-start' }}">
+                                <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg {{ 'bg-indigo-600 text-white' if message.role == 'user' else 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100' }}">
+                                    <div class="text-sm">{{ message.content }}</div>
+                                    <div class="text-xs mt-1 opacity-75">
+                                        {{ message.created_at.strftime('%H:%M') }}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-8">
+                            <i class="fas fa-robot text-4xl text-gray-400 dark:text-gray-600 mb-4"></i>
+                            <h4 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                                Welcome to Your AI Coach!
+                            </h4>
+                            <p class="text-gray-500 dark:text-gray-400">
+                                Ask me about nutrition, meal planning, or your health goals.
+                            </p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Chat Input -->
+                <div class="border-t border-gray-200 dark:border-gray-700 p-4">
+                    <form id="chat-form" class="flex space-x-2">
+                        <input type="text" 
+                               id="chat-input"
+                               placeholder="Ask your nutrition coach anything..."
+                               {{ 'disabled' if not ollama_configured }}
+                               class="flex-1 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-gray-100 disabled:bg-gray-100 dark:disabled:bg-gray-800">
+                        <button type="submit" 
+                                {{ 'disabled' if not ollama_configured }}
+                                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="space-y-6 flex flex-col min-h-0">
+            <!-- Quick Actions -->
+            <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100 mb-4">
+                        Quick Actions
+                    </h3>
+                    <div id="quick-suggestions" class="space-y-2">
+                        <!-- Dynamic suggestions will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Today's Summary -->
+            {% if today_summary %}
+                <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+                    <div class="px-4 py-5 sm:p-6">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100 mb-4">
+                            Today's Progress
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-500 dark:text-gray-400">Calories</span>
+                                <span class="font-medium text-gray-900 dark:text-gray-100">
+                                    {{ "%.0f"|format(today_summary.totals.calories) }} / {{ today_summary.targets.calories }}
+                                </span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-500 dark:text-gray-400">Protein</span>
+                                <span class="font-medium text-gray-900 dark:text-gray-100">
+                                    {{ "%.1f"|format(today_summary.totals.protein_g) }}g / {{ "%.1f"|format(today_summary.targets.protein_g) }}g
+                                </span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-500 dark:text-gray-400">Remaining</span>
+                                <span class="font-medium text-green-600 dark:text-green-400">
+                                    {{ "%.0f"|format(today_summary.remaining.calories) }} cal
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Food Suggestions -->
+            {% if suggestions %}
+                <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+                    <div class="px-4 py-5 sm:p-6">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100 mb-4">
+                            Suggested Foods
+                        </h3>
+                        <div class="space-y-2">
+                            {% for suggestion in suggestions[:3] %}
+                                <div class="p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                    <div class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                        {{ suggestion.name }}
+                                    </div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">
+                                        {{ suggestion.calories }} cal | {{ suggestion.protein }}g protein
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadQuickSuggestions();
+    
+    // Auto-scroll to bottom of chat
+    const chatMessages = document.getElementById('chat-messages');
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+});
+
+document.getElementById('chat-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    sendMessage();
+});
+
+function sendMessage() {
+    const input = document.getElementById('chat-input');
+    const message = input.value.trim();
+    
+    if (!message) return;
+    
+    // Add user message to chat
+    addMessageToChat('user', message);
+    input.value = '';
+    
+    // Send to AI coach
+    fetch('/api/coach/chat', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: message })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Chat request failed');
+        }
+        
+        // Handle streaming response
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let assistantMessage = '';
+        
+        // Add empty assistant message bubble
+        const messageId = addMessageToChat('assistant', '');
+        
+        function readStream() {
+            reader.read().then(({ done, value }) => {
+                if (done) return;
+                
+                const chunk = decoder.decode(value);
+                const lines = chunk.split('\n');
+                
+                for (let line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.slice(6));
+                            if (data.content) {
+                                assistantMessage += data.content;
+                                updateMessageContent(messageId, assistantMessage);
+                            }
+                            if (data.done) {
+                                return;
+                            }
+                        } catch (e) {
+                            // Ignore parse errors
+                        }
+                    }
+                }
+                
+                readStream();
+            });
+        }
+        
+        readStream();
+    })
+    .catch(error => {
+        console.error('Chat error:', error);
+        addMessageToChat('assistant', 'Sorry, I encountered an error. Please try again or check your AI model configuration.');
+    });
+}
+
+function addMessageToChat(role, content) {
+    const chatMessages = document.getElementById('chat-messages');
+    const messageId = 'msg-' + Date.now();
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+    messageDiv.innerHTML = `
+        <div id="${messageId}" class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+            role === 'user' 
+                ? 'bg-indigo-600 text-white' 
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
+        }">
+            <div class="text-sm">${content}</div>
+            <div class="text-xs mt-1 opacity-75">
+                ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+            </div>
+        </div>
+    `;
+    
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    return messageId;
+}
+
+function updateMessageContent(messageId, content) {
+    const messageElement = document.getElementById(messageId);
+    if (messageElement) {
+        const textDiv = messageElement.querySelector('.text-sm');
+        textDiv.textContent = content;
+    }
+}
+
+function loadQuickSuggestions() {
+    fetch('/coach/quick-actions')
+        .then(response => response.json())
+        .then(data => {
+            displayQuickSuggestions(data.suggestions || []);
+        })
+        .catch(error => {
+            console.error('Failed to load suggestions:', error);
+        });
+}
+
+function displayQuickSuggestions(suggestions) {
+    const container = document.getElementById('quick-suggestions');
+    
+    if (!suggestions || suggestions.length === 0) {
+        container.innerHTML = `
+            <div class="text-sm text-gray-500 dark:text-gray-400">
+                No suggestions available
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = suggestions.slice(0, 6).map(suggestion => `
+        <button onclick="useQuickSuggestion('${suggestion.prompt.replace(/'/g, "\\'")}')"
+                class="w-full text-left p-2 text-sm rounded-md bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+            <div class="font-medium text-gray-900 dark:text-gray-100">
+                ${suggestion.title}
+            </div>
+            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                ${suggestion.description}
+            </div>
+        </button>
+    `).join('');
+}
+
+function useQuickSuggestion(prompt) {
+    document.getElementById('chat-input').value = prompt;
+    sendMessage();
+}
+
+function clearChatHistory() {
+    if (!confirm('Are you sure you want to clear all chat history? This action cannot be undone.')) {
+        return;
+    }
+    
+    fetch('/api/coach/clear-history', {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to clear chat history');
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Clear the chat messages from the UI
+        document.getElementById('chat-messages').innerHTML = `
+            <div class="text-center py-8">
+                <i class="fas fa-robot text-4xl text-gray-400 dark:text-gray-600 mb-4"></i>
+                <h4 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                    Chat history cleared!
+                </h4>
+                <p class="text-gray-500 dark:text-gray-400">
+                    Start a new conversation with your AI coach.
+                </p>
+            </div>
+        `;
+        
+        // Show success message
+        console.log(data.message);
+    })
+    .catch(error => {
+        console.error('Error clearing chat history:', error);
+        alert('Failed to clear chat history. Please try again.');
+    });
+}
+
+// Enter key support
+document.getElementById('chat-input').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+    }
+});
+</script>
+{% endblock %}
