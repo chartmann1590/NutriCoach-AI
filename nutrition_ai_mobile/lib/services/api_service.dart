@@ -321,6 +321,7 @@ class ApiService {
           return DashboardData.fromJson(data);
         } catch (parseError) {
           print('Dashboard: JSON parse error: $parseError');
+          print('Dashboard: Error type: ${parseError.runtimeType}');
           print('Dashboard: Raw response: ${response.body}');
           return null;
         }
@@ -330,7 +331,19 @@ class ApiService {
       } else {
         print('Dashboard: API error ${response.statusCode}');
         print('Dashboard: Error response: ${response.body}');
-        throw Exception('Dashboard API returned ${response.statusCode}');
+        
+        // Try to parse error response
+        String errorMessage = 'Dashboard API returned ${response.statusCode}';
+        try {
+          final errorData = json.decode(response.body);
+          if (errorData['error'] != null) {
+            errorMessage = errorData['error'];
+          }
+        } catch (e) {
+          // Ignore JSON parse errors for error responses
+        }
+        
+        throw Exception(errorMessage);
       }
     } catch (e) {
       print('Dashboard data error: $e');

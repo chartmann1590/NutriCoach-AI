@@ -26,8 +26,8 @@ RUN apt-get update \
 RUN pip install --upgrade pip
 
 # Copy requirements first for better layer caching
-COPY requirements_core.txt .
-RUN pip install --default-timeout=1000 --no-cache-dir -r requirements_core.txt
+COPY requirements.txt .
+RUN pip install --default-timeout=1000 --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .

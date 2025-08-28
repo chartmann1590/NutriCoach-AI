@@ -185,9 +185,18 @@ function uploadPhoto() {
         method: 'POST',
         body: formData
     })
-    .then(response => response.json())
-    .then(data => {
+    .then(async response => {
+        const data = await response.json();
         hideLoading();
+        if (!response.ok) {
+            const msg = data.error || 'Photo analysis failed.';
+            const detail = data.warning || (data.errors && data.errors.length ? data.errors[0] : null);
+            showError(detail ? `${msg} ${detail}` : msg);
+            return;
+        }
+        if (data.warning) {
+            showError(data.warning);
+        }
         if (data.candidates) {
             displayResults(data.candidates);
         } else {

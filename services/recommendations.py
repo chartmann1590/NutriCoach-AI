@@ -108,7 +108,7 @@ class RecommendationService:
             totals['fat_percent'] = (totals['fat_g'] / targets['fat_g']) * 100
         
         return {
-            'date': date,
+            'date': date.isoformat() if hasattr(date, 'isoformat') else str(date),
             'totals': totals,
             'targets': targets,
             'remaining': {
@@ -138,15 +138,16 @@ class RecommendationService:
         daily_totals = {}
         for log in logs:
             log_date = log.logged_at.date()
-            if log_date not in daily_totals:
-                daily_totals[log_date] = {
+            date_str = log_date.isoformat()  # Convert to string for JSON compatibility
+            if date_str not in daily_totals:
+                daily_totals[date_str] = {
                     'calories': 0, 'protein_g': 0, 'carbs_g': 0, 'fat_g': 0
                 }
             
-            daily_totals[log_date]['calories'] += log.calories
-            daily_totals[log_date]['protein_g'] += log.protein_g
-            daily_totals[log_date]['carbs_g'] += log.carbs_g
-            daily_totals[log_date]['fat_g'] += log.fat_g
+            daily_totals[date_str]['calories'] += log.calories
+            daily_totals[date_str]['protein_g'] += log.protein_g
+            daily_totals[date_str]['carbs_g'] += log.carbs_g
+            daily_totals[date_str]['fat_g'] += log.fat_g
         
         # Calculate averages
         days_with_data = len(daily_totals)
@@ -159,8 +160,8 @@ class RecommendationService:
             avg_calories = avg_protein = avg_carbs = avg_fat = 0
         
         return {
-            'week_start': start_of_week,
-            'week_end': end_of_week,
+            'week_start': start_of_week.isoformat() if hasattr(start_of_week, 'isoformat') else str(start_of_week),
+            'week_end': end_of_week.isoformat() if hasattr(end_of_week, 'isoformat') else str(end_of_week),
             'days_logged': days_with_data,
             'averages': {
                 'calories': round(avg_calories),

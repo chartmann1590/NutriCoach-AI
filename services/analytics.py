@@ -46,7 +46,13 @@ class AnalyticsService:
         
         # Fill in missing days with zeros
         current_date = start_date
-        data_dict = {row.date: row for row in daily_data}
+        data_dict = {}
+        for row in daily_data:
+            date_key = row.date
+            if isinstance(date_key, str):
+                from datetime import datetime as dt
+                date_key = dt.strptime(date_key, '%Y-%m-%d').date()
+            data_dict[date_key] = row
         
         while current_date <= end_date:
             chart_data['dates'].append(current_date.isoformat())
@@ -243,7 +249,13 @@ class AnalyticsService:
                 'total_days_logged': 0
             }
         
-        dates = [row.date for row in logging_dates]
+        dates = []
+        for row in logging_dates:
+            date_val = row.date
+            if isinstance(date_val, str):
+                from datetime import datetime as dt
+                date_val = dt.strptime(date_val, '%Y-%m-%d').date()
+            dates.append(date_val)
         
         # Calculate current streak
         current_streak = 0
@@ -304,7 +316,13 @@ class AnalyticsService:
         
         # Fill in missing days
         current_date = start_date
-        data_dict = {row.date: row for row in daily_water}
+        data_dict = {}
+        for row in daily_water:
+            date_key = row.date
+            if isinstance(date_key, str):
+                from datetime import datetime as dt
+                date_key = dt.strptime(date_key, '%Y-%m-%d').date()
+            data_dict[date_key] = row
         
         while current_date <= end_date:
             chart_data['dates'].append(current_date.isoformat())

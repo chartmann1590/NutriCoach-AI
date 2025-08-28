@@ -76,6 +76,7 @@ comprehensive_*.py
 *.temp
 
 # Mobile app directories
+nutrition_ai_mobile/
 nutricoach_mobile_final/
 nutricoach_mobile_new/
 *.apk

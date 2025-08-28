@@ -25,6 +25,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _loadDashboardData();
   }
 
+  double _safeToDouble(dynamic value, [double defaultValue = 0.0]) {
+    if (value == null) return defaultValue;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      final parsed = double.tryParse(value);
+      return parsed ?? defaultValue;
+    }
+    return defaultValue;
+  }
+
   Future<void> _loadDashboardData() async {
     setState(() {
       _isLoading = true;
@@ -36,16 +47,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final recentLogs = await ApiService.getFoodLogs(limit: 10);
       
       if (mounted) {
-        setState(() {
-          _dashboardData = dashboardData;
-          _recentLogs = recentLogs;
-          _isLoading = false;
-        });
+        if (dashboardData != null) {
+          setState(() {
+            _dashboardData = dashboardData;
+            _recentLogs = recentLogs;
+            _isLoading = false;
+          });
+        } else {
+          setState(() {
+            _errorMessage = 'Failed to load dashboard data';
+            _isLoading = false;
+          });
+        }
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       if (mounted) {
+        print('Dashboard load error: $e');
+        print('Stack trace: $stackTrace');
+        
         setState(() {
-          _errorMessage = e.toString();
+          _errorMessage = 'Failed to load dashboard: ${e.toString()}';
           _isLoading = false;
         });
         
@@ -248,11 +269,173 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  Widget _buildEmptyDashboard() {
+    // Show dashboard with default/empty values
+    final emptyTotals = <String, dynamic>{
+      'calories': 0,
+      'protein_g': 0,
+      'carbs_g': 0,
+      'fat_g': 0,
+    };
+    final defaultTargets = <String, dynamic>{
+      'calories': 2000,
+      'protein_g': 150,
+      'carbs_g': 250,
+      'fat_g': 67,
+    };
+    
+    return RefreshIndicator(
+      onRefresh: _loadDashboardData,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Welcome Card
+            Card(
+              elevation: 6,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  gradient: LinearGradient(
+                    colors: [Colors.blue.shade600, Colors.blue.shade400],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Welcome to NutriCoach!',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Start logging food to see your nutrition data',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            
+            const SizedBox(height: 20),
+            
+            // Today's Nutrition (with default targets)
+            const Text(
+              'Today\'s Nutrition Goals',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            
+            GridView.count(
+              crossAxisCount: 2,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              children: [
+                _buildNutritionCard(
+                  'Calories',
+                  _safeToDouble(emptyTotals['calories']),
+                  _safeToDouble(defaultTargets['calories']),
+                  'cal',
+                  Colors.blue,
+                ),
+                _buildNutritionCard(
+                  'Protein',
+                  _safeToDouble(emptyTotals['protein_g']),
+                  _safeToDouble(defaultTargets['protein_g']),
+                  'g',
+                  Colors.red,
+                ),
+                _buildNutritionCard(
+                  'Carbs',
+                  _safeToDouble(emptyTotals['carbs_g']),
+                  _safeToDouble(defaultTargets['carbs_g']),
+                  'g',
+                  Colors.orange,
+                ),
+                _buildNutritionCard(
+                  'Fat',
+                  _safeToDouble(emptyTotals['fat_g']),
+                  _safeToDouble(defaultTargets['fat_g']),
+                  'g',
+                  Colors.purple,
+                ),
+              ],
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // No food logs message
+            const Text(
+              'Recent Food Logs',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.restaurant_menu,
+                      size: 48,
+                      color: Colors.grey.shade400,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'No food logs yet',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Start logging your meals to track your nutrition',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade500,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildDashboardContent() {
     if (_dashboardData == null) {
-      return const Center(
-        child: Text('No dashboard data available'),
-      );
+      // Show default dashboard with empty data
+      return _buildEmptyDashboard();
     }
 
     final today = _dashboardData!.today;
@@ -327,29 +510,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
               children: [
                 _buildNutritionCard(
                   'Calories',
-                  (totals['calories'] ?? 0).toDouble(),
-                  (targets['calories'] ?? 2000).toDouble(),
+                  _safeToDouble(totals['calories']),
+                  _safeToDouble(targets['calories'], 2000),
                   'cal',
                   Colors.blue,
                 ),
                 _buildNutritionCard(
                   'Protein',
-                  (totals['protein_g'] ?? 0).toDouble(),
-                  (targets['protein_g'] ?? 150).toDouble(),
+                  _safeToDouble(totals['protein_g']),
+                  _safeToDouble(targets['protein_g'], 150),
                   'g',
                   Colors.red,
                 ),
                 _buildNutritionCard(
                   'Carbs',
-                  (totals['carbs_g'] ?? 0).toDouble(),
-                  (targets['carbs_g'] ?? 250).toDouble(),
+                  _safeToDouble(totals['carbs_g']),
+                  _safeToDouble(targets['carbs_g'], 250),
                   'g',
                   Colors.orange,
                 ),
                 _buildNutritionCard(
                   'Fat',
-                  (totals['fat_g'] ?? 0).toDouble(),
-                  (targets['fat_g'] ?? 67).toDouble(),
+                  _safeToDouble(totals['fat_g']),
+                  _safeToDouble(targets['fat_g'], 67),
                   'g',
                   Colors.purple,
                 ),
@@ -459,9 +642,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       body: _isLoading
           ? _buildLoadingView()
-          : _errorMessage != null
-              ? _buildErrorView()
-              : _buildDashboardContent(),
+          : Column(
+              children: [
+                // Show error banner if there's an error but still show dashboard
+                if (_errorMessage != null)
+                  Container(
+                    width: double.infinity,
+                    color: Colors.orange.shade100,
+                    padding: const EdgeInsets.all(8),
+                    child: Row(
+                      children: [
+                        Icon(Icons.warning_amber, color: Colors.orange.shade800, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Unable to sync with server. Showing offline data.',
+                            style: TextStyle(
+                              color: Colors.orange.shade800,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: _loadDashboardData,
+                          child: Text(
+                            'Retry',
+                            style: TextStyle(
+                              color: Colors.orange.shade800,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                // Always show dashboard content (with fallback if no data)
+                Expanded(child: _buildDashboardContent()),
+              ],
+            ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           Navigator.of(context).push(

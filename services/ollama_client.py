@@ -1,6 +1,7 @@
 import requests
 import json
 import base64
+import re
 from typing import List, Dict, Optional, Generator
 from flask import current_app
 from flask_login import current_user
@@ -151,7 +152,8 @@ class OllamaClient:
             data = {
                 'model': model,
                 'prompt': prompt,
-                'images': [image_data]
+                'images': [image_data],
+                'stream': False
             }
             
             response = self._make_request('api/generate', 'POST', data)

@@ -349,13 +349,34 @@ def upload_photo():
         db.session.commit()
         
         # Analyze the photo
-        candidates = _analyze_food_photo(filepath, photo.id)
+        candidates, meta = _analyze_food_photo(filepath, photo.id)
         
-        return jsonify({
+        # If analysis failed entirely, surface error to client
+        if not candidates:
+            current_app.logger.warning(f"Photo analysis returned no candidates. Warning: {meta.get('warning')}, Errors: {meta.get('errors')}")
+            return jsonify({
+                'photo_id': photo.id,
+                'filename': filename,
+                'error': 'Photo analysis failed',
+                'warning': meta.get('warning'),
+                'errors': meta.get('errors')
+            }), 502
+        
+        response_body = {
             'photo_id': photo.id,
             'filename': filename,
             'candidates': candidates
-        }), 201
+        }
+        
+        # Include analysis metadata (e.g., fallback/vision, warnings)
+        if meta.get('source'):
+            response_body['analysis_source'] = meta['source']
+        if meta.get('warning'):
+            response_body['warning'] = meta['warning']
+        if meta.get('errors'):
+            response_body['errors'] = meta['errors']
+        
+        return jsonify(response_body), 201
     
     except Exception as e:
         current_app.logger.error(f"Error uploading photo: {e}")
@@ -554,8 +575,7 @@ def get_nutrition_trends():
     days = request.args.get('days', 30, type=int)
     
     try:
-        analytics = AnalyticsService()
-        data = analytics.get_nutrition_trends(current_user.id, days)
+        data = AnalyticsService.get_nutrition_trends(current_user.id, days)
         return jsonify(data)
     
     except Exception as e:
@@ -570,8 +590,7 @@ def get_weight_trends():
     days = request.args.get('days', 90, type=int)
     
     try:
-        analytics = AnalyticsService()
-        data = analytics.get_weight_trends(current_user.id, days)
+        data = AnalyticsService.get_weight_trends(current_user.id, days)
         return jsonify(data)
     
     except Exception as e:
@@ -584,26 +603,23 @@ def get_weight_trends():
 def get_dashboard_data():
     """Get dashboard analytics data"""
     try:
-        recommendations = RecommendationService()
-        analytics = AnalyticsService()
-        
         # Get today's summary
-        today_summary = recommendations.get_daily_summary(current_user.id)
+        today_summary = RecommendationService.get_daily_summary(current_user.id)
         
         # Get weekly summary  
-        weekly_summary = recommendations.get_weekly_summary(current_user.id)
+        weekly_summary = RecommendationService.get_weekly_summary(current_user.id)
         
         # Get meal distribution
-        meal_distribution = analytics.get_meal_distribution(current_user.id, 7)
+        meal_distribution = AnalyticsService.get_meal_distribution(current_user.id, 7)
         
         # Get macro distribution
-        macro_distribution = analytics.get_macro_distribution(current_user.id, 7)
+        macro_distribution = AnalyticsService.get_macro_distribution(current_user.id, 7)
         
         # Get logging streaks
-        streaks = analytics.get_logging_streaks(current_user.id)
+        streaks = AnalyticsService.get_logging_streaks(current_user.id)
         
         # Get top foods
-        top_foods = analytics.get_top_foods(current_user.id, 7, 5)
+        top_foods = AnalyticsService.get_top_foods(current_user.id, 7, 5)
         
         return jsonify({
             'today': today_summary,
@@ -639,8 +655,7 @@ def export_logs():
             end_date = datetime.utcnow()
         
         # Get export data
-        analytics = AnalyticsService()
-        data = analytics.export_data(current_user.id, start_date, end_date)
+        data = AnalyticsService.export_data(current_user.id, start_date, end_date)
         
         # Create CSV
         output = StringIO()
@@ -695,8 +710,9 @@ def _process_image(filepath):
 
 
 def _analyze_food_photo(filepath, photo_id):
-    """Analyze food photo and return candidates with enhanced food identification"""
+    """Analyze food photo and return (candidates, meta) with enhanced food identification"""
     try:
+        meta = {'source': None, 'warning': None, 'errors': []}
         # Try Ollama vision first using user settings
         client = OllamaClient.from_user_settings()
         user_models = OllamaClient.get_user_models()
@@ -736,24 +752,36 @@ Focus only on food items that are clearly visible and identifiable. Ignore plate
                         try:
                             vision_items = json.loads(json_match.group())
                             current_app.logger.info(f"Successfully parsed {len(vision_items)} food items from vision")
+                            meta['source'] = 'vision'
                         except json.JSONDecodeError as e:
                             current_app.logger.warning(f"Failed to parse JSON from vision result: {e}")
+                            meta['errors'].append(f"Vision JSON parse error: {str(e)}")
                             # Parse the text response as fallback
                             vision_items = _parse_vision_text_response(analysis_result)
+                            if vision_items:
+                                meta['source'] = 'vision'
                     else:
                         # Parse the text response
                         vision_items = _parse_vision_text_response(analysis_result)
+                        if vision_items:
+                            meta['source'] = 'vision'
                 else:
                     current_app.logger.warning("No result from Ollama vision analysis")
+                    meta['warning'] = 'Vision model returned no result'
                     
             except Exception as e:
                 current_app.logger.error(f"Error with Ollama vision: {e}")
+                meta['errors'].append(f"Vision error: {str(e)}")
+        else:
+            current_app.logger.warning("No vision model configured; using fallback classifier")
+            meta['warning'] = 'No vision model configured; using fallback classifier'
         
         # Fallback to local classifier if Ollama vision failed
         if not vision_items:
             current_app.logger.info("Using fallback local classifier")
             classifier = VisionClassifier()
             vision_items = classifier.classify_image(filepath)
+            meta['source'] = 'fallback'
         
         # Parse results with enhanced nutrition lookup
         parser = FoodParser()
@@ -797,15 +825,15 @@ Focus only on food items that are clearly visible and identifiable. Ignore plate
         # Update photo with analysis
         photo = Photo.query.get(photo_id)
         if photo:
-            photo.set_analysis({'candidates': candidates, 'vision_items': vision_items})
+            photo.set_analysis({'candidates': candidates, 'vision_items': vision_items, 'meta': meta})
             db.session.commit()
         
         current_app.logger.info(f"Analysis complete. Found {len(candidates)} food candidates")
-        return candidates
+        return candidates, meta
     
     except Exception as e:
         current_app.logger.error(f"Error analyzing photo: {e}")
-        return []
+        return [], {'source': None, 'warning': 'Unexpected error during analysis', 'errors': [str(e)]}
 
 
 def _parse_vision_text_response(text_response):
