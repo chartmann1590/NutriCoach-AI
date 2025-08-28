@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'services/auth_service.dart';
 import 'screens/server_setup_screen.dart';
 import 'screens/login_screen.dart';
-import 'screens/dashboard_screen.dart';
+import 'screens/main_navigation.dart';
 
 void main() {
   runApp(const NutriCoachApp());
@@ -66,9 +66,9 @@ class AuthWrapper extends StatelessWidget {
           return const ServerSetupScreen();
         }
         
-        // Show dashboard if authenticated
+        // Show main navigation if authenticated
         if (authService.isAuthenticated) {
-          return const DashboardScreen();
+          return const MainNavigation();
         }
         
         // Show login screen by default

@@ -510,6 +510,36 @@ def clear_coach_history():
         return jsonify({'error': 'Failed to clear chat history'}), 500
 
 
+@api_bp.route('/coach/history', methods=['GET'])
+@login_required
+def get_coach_history():
+    """Get chat history for the current user"""
+    try:
+        # Get recent chat messages for the user
+        messages = CoachMessage.query.filter_by(user_id=current_user.id)\
+            .order_by(CoachMessage.created_at.asc())\
+            .limit(50).all()
+        
+        messages_data = []
+        for msg in messages:
+            if msg.role != 'system':  # Don't include system messages in mobile app
+                messages_data.append({
+                    'role': msg.role,
+                    'content': msg.content,
+                    'created_at': msg.created_at.isoformat(),
+                    'refs': msg.get_refs() if msg.refs else []
+                })
+        
+        return jsonify({
+            'messages': messages_data,
+            'count': len(messages_data)
+        }), 200
+    
+    except Exception as e:
+        current_app.logger.error(f"Error getting coach history: {e}")
+        return jsonify({'error': 'Failed to get chat history'}), 500
+
+
 @api_bp.route('/weigh-in', methods=['POST'])
 @login_required
 def record_weight():

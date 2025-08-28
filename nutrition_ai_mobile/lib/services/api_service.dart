@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/food_log.dart';
 import '../models/food_item.dart';
+import '../models/coach_message.dart';
 
 class ApiService {
   static String? _baseUrl;
@@ -510,6 +511,116 @@ class ApiService {
         rethrow;
       }
       throw Exception('Barcode search failed: $e');
+    }
+  }
+
+  // AI Coach functionality
+  static Future<List<CoachMessage>> getChatHistory() async {
+    if (_baseUrl == null || _sessionCookie == null) {
+      throw Exception('Not authenticated. Please login first.');
+    }
+
+    try {
+      print('Getting chat history');
+
+      final response = await http.get(
+        Uri.parse('$_baseUrl/api/coach/history'),
+        headers: _headers,
+      ).timeout(const Duration(seconds: 20));
+
+      print('Chat history response: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final messages = data['messages'] as List? ?? [];
+        
+        print('Found ${messages.length} chat messages');
+        
+        return messages.map((message) => CoachMessage.fromJson(message)).toList();
+      } else if (response.statusCode == 401) {
+        clearSession();
+        throw Exception('Session expired. Please login again.');
+      } else {
+        throw Exception('Failed to load chat history: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Chat history error: $e');
+      if (e.toString().contains('Session expired')) {
+        rethrow;
+      }
+      throw Exception('Failed to load chat history: $e');
+    }
+  }
+
+  static Future<String> sendChatMessage(String message) async {
+    if (_baseUrl == null || _sessionCookie == null) {
+      throw Exception('Not authenticated. Please login first.');
+    }
+
+    try {
+      print('Sending chat message: $message');
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/api/coach/chat'),
+        headers: _headers,
+        body: json.encode({'message': message}),
+      ).timeout(const Duration(seconds: 60));
+
+      print('Chat response: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final content = data['content'] ?? '';
+        
+        print('Received chat response: ${content.length} characters');
+        
+        return content;
+      } else if (response.statusCode == 401) {
+        clearSession();
+        throw Exception('Session expired. Please login again.');
+      } else {
+        final errorData = json.decode(response.body);
+        final errorMessage = errorData['error'] ?? 'Chat failed';
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      print('Chat error: $e');
+      if (e.toString().contains('Session expired')) {
+        rethrow;
+      }
+      throw Exception('Chat failed: $e');
+    }
+  }
+
+  static Future<void> clearChatHistory() async {
+    if (_baseUrl == null || _sessionCookie == null) {
+      throw Exception('Not authenticated. Please login first.');
+    }
+
+    try {
+      print('Clearing chat history');
+
+      final response = await http.delete(
+        Uri.parse('$_baseUrl/api/coach/clear-history'),
+        headers: _headers,
+      ).timeout(const Duration(seconds: 20));
+
+      print('Clear history response: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        print('Chat history cleared successfully');
+      } else if (response.statusCode == 401) {
+        clearSession();
+        throw Exception('Session expired. Please login again.');
+      } else {
+        throw Exception('Failed to clear chat history: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Clear history error: $e');
+      if (e.toString().contains('Session expired')) {
+        rethrow;
+      }
+      throw Exception('Failed to clear chat history: $e');
     }
   }
 }
