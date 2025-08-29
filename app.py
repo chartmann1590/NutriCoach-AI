@@ -70,6 +70,10 @@ def create_app(config_name=None):
     if not scheduler.running:
         scheduler.start()
     
+    # Initialize reminder scheduler
+    from services.reminder_scheduler import init_reminder_scheduler
+    init_reminder_scheduler(scheduler)
+    
     return app
 
 

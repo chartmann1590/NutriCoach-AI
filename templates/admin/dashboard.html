@@ -120,6 +120,63 @@
         </div>
     </div>
 
+    <!-- Notification Management -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Notification Management</h3>
+            <button onclick="showSendNotificationModal()" 
+                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                <i class="fas fa-paper-plane mr-2"></i>
+                Send Notification
+            </button>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Notification Stats -->
+            <div class="text-center">
+                <div class="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
+                    {{ notification_stats.total_notifications or 0 }}
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Total Notifications</p>
+            </div>
+            
+            <div class="text-center">
+                <div class="text-3xl font-bold text-green-600 dark:text-green-400">
+                    {{ notification_stats.active_templates or 0 }}
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Active Templates</p>
+            </div>
+            
+            <div class="text-center">
+                <div class="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                    {{ notification_stats.sent_today or 0 }}
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Sent Today</p>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="mt-6 flex flex-wrap gap-3">
+            <a href="{{ url_for('admin.notification_templates') }}" 
+               class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
+                <i class="fas fa-file-alt mr-2"></i>
+                Manage Templates
+            </a>
+            
+            <a href="{{ url_for('admin.notifications') }}" 
+               class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
+                <i class="fas fa-history mr-2"></i>
+                Notification History
+            </a>
+            
+            <button onclick="testNotificationSystem()" 
+                    class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
+                <i class="fas fa-vial mr-2"></i>
+                Test System
+            </button>
+        </div>
+    </div>
+
     <!-- User Registration Chart -->
     <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">User Registrations (Last 30 Days)</h3>
@@ -199,6 +256,86 @@
     </div>
 </div>
 
+<!-- Send Notification Modal -->
+<div id="sendNotificationModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-full max-w-md bg-white dark:bg-gray-800 rounded-md shadow">
+        <div class="mt-3">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Send Notification</h3>
+                <button onclick="hideSendNotificationModal()" 
+                        class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="sendNotificationForm" class="space-y-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Recipient</label>
+                    <select name="recipient_type" id="recipientType" onchange="handleRecipientTypeChange()" 
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-gray-100">
+                        <option value="all">All Users</option>
+                        <option value="active">Active Users Only</option>
+                        <option value="specific">Specific User</option>
+                        <option value="admin">All Admins</option>
+                    </select>
+                </div>
+                
+                <div id="specificUserDiv" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select User</label>
+                    <select name="user_id" id="userId" 
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-gray-100">
+                        <!-- Users will be loaded dynamically -->
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Template</label>
+                    <select name="template_id" id="templateId" onchange="handleTemplateChange()"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-gray-100">
+                        <option value="">Custom Message</option>
+                        <!-- Templates will be loaded dynamically -->
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Title</label>
+                    <input type="text" name="title" id="notificationTitle" required
+                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-gray-100">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Message</label>
+                    <textarea name="message" id="notificationMessage" rows="3" required
+                              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-gray-100"></textarea>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Priority</label>
+                    <select name="priority" id="notificationPriority"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-gray-100">
+                        <option value="normal">Normal</option>
+                        <option value="high">High</option>
+                        <option value="urgent">Urgent</option>
+                    </select>
+                </div>
+                
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" onclick="hideSendNotificationModal()"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700">
+                        <i class="fas fa-paper-plane mr-1"></i>
+                        Send
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
 // User Registration Chart
 document.addEventListener('DOMContentLoaded', function() {
@@ -246,6 +383,150 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('Error creating chart:', error);
         document.getElementById('registrationChart').style.display = 'none';
     }
+    
+    // Load notification data on page load
+    loadUsers();
+    loadTemplates();
 });
+
+// Notification Modal Functions
+function showSendNotificationModal() {
+    document.getElementById('sendNotificationModal').classList.remove('hidden');
+}
+
+function hideSendNotificationModal() {
+    document.getElementById('sendNotificationModal').classList.add('hidden');
+    document.getElementById('sendNotificationForm').reset();
+    document.getElementById('specificUserDiv').classList.add('hidden');
+}
+
+function handleRecipientTypeChange() {
+    const recipientType = document.getElementById('recipientType').value;
+    const specificUserDiv = document.getElementById('specificUserDiv');
+    
+    if (recipientType === 'specific') {
+        specificUserDiv.classList.remove('hidden');
+    } else {
+        specificUserDiv.classList.add('hidden');
+    }
+}
+
+function handleTemplateChange() {
+    const templateSelect = document.getElementById('templateId');
+    const selectedOption = templateSelect.options[templateSelect.selectedIndex];
+    
+    if (selectedOption.dataset.title) {
+        document.getElementById('notificationTitle').value = selectedOption.dataset.title;
+    }
+    if (selectedOption.dataset.message) {
+        document.getElementById('notificationMessage').value = selectedOption.dataset.message;
+    }
+}
+
+function loadUsers() {
+    fetch('/api/admin/users-list')
+        .then(response => response.json())
+        .then(data => {
+            const userSelect = document.getElementById('userId');
+            userSelect.innerHTML = '';
+            
+            data.users.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = `${user.name} (${user.email})`;
+                userSelect.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading users:', error);
+        });
+}
+
+function loadTemplates() {
+    fetch('/api/admin/notification-templates')
+        .then(response => response.json())
+        .then(data => {
+            const templateSelect = document.getElementById('templateId');
+            
+            data.templates.forEach(template => {
+                const option = document.createElement('option');
+                option.value = template.id;
+                option.textContent = template.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                option.dataset.title = template.title_template;
+                option.dataset.message = template.message_template;
+                templateSelect.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading templates:', error);
+        });
+}
+
+// Handle form submission
+document.getElementById('sendNotificationForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData);
+    
+    // Show loading state
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Sending...';
+    submitBtn.disabled = true;
+    
+    fetch('/api/admin/send-notification', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Notification sent successfully!');
+            hideSendNotificationModal();
+            // Refresh page to update stats
+            location.reload();
+        } else {
+            alert('Error sending notification: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error sending notification:', error);
+        alert('Error sending notification. Please try again.');
+    })
+    .finally(() => {
+        // Restore button state
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    });
+});
+
+function testNotificationSystem() {
+    if (confirm('This will send a test notification to all admin users. Continue?')) {
+        fetch('/api/admin/test-notification', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Test notification sent successfully!');
+            } else {
+                alert('Error sending test notification: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error sending test notification:', error);
+            alert('Error sending test notification. Please try again.');
+        });
+    }
+}
 </script>
 {% endblock %}

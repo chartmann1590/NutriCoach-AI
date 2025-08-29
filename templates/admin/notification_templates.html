@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Notification Templates - Admin - NutriCoach{% endblock %}
+{% block page_title %}Notification Templates{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Header with Create Button -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Manage Notification Templates</h3>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Create and manage reusable notification templates for different types of messages.
+                </p>
+            </div>
+            <div class="flex space-x-3">
+                <a href="{{ url_for('admin.notifications') }}" 
+                   class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Back to Notifications
+                </a>
+                <a href="{{ url_for('admin.create_notification_template') }}" 
+                   class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                    <i class="fas fa-plus mr-2"></i>
+                    Create Template
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Templates List -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-600">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Available Templates</h3>
+        </div>
+        <div class="divide-y divide-gray-200 dark:divide-gray-600">
+            {% for template in templates %}
+                <div class="px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-3">
+                                <div class="flex-shrink-0">
+                                    {% if template.category == 'meal_reminder' %}
+                                        <i class="fas fa-utensils text-green-500"></i>
+                                    {% elif template.category == 'goal_achieved' %}
+                                        <i class="fas fa-trophy text-yellow-500"></i>
+                                    {% elif template.category == 'weigh_in_reminder' %}
+                                        <i class="fas fa-weight text-blue-500"></i>
+                                    {% elif template.category == 'admin_message' %}
+                                        <i class="fas fa-user-shield text-purple-500"></i>
+                                    {% else %}
+                                        <i class="fas fa-bell text-gray-500"></i>
+                                    {% endif %}
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                        {{ template.name.replace('_', ' ').title() }}
+                                    </p>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                                        {{ template.title_template }}
+                                    </p>
+                                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                                        {{ template.message_template[:100] }}{% if template.message_template|length > 100 %}...{% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <div class="flex flex-col items-end space-y-1">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                    {% if template.priority == 'urgent' %}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200{% elif template.priority == 'high' %}bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200{% else %}bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200{% endif %}">
+                                    {{ template.priority.title() }}
+                                </span>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                    {% if template.is_active %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200{% else %}bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200{% endif %}">
+                                    {% if template.is_active %}Active{% else %}Inactive{% endif %}
+                                </span>
+                            </div>
+                            <div class="flex space-x-2">
+                                {% if not template.is_system_template %}
+                                <button class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                {% else %}
+                                <span class="text-xs text-gray-500 dark:text-gray-400">System Template</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-file-alt text-4xl mb-4"></i>
+                    <p>No notification templates found</p>
+                    <p class="text-sm mt-2">Create your first template to get started.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Template Categories -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Template Categories</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 dark:border-gray-600">
+                <i class="fas fa-utensils text-green-500"></i>
+                <div>
+                    <p class="text-sm font-medium text-gray-900 dark:text-gray-100">Meal Reminders</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Breakfast, lunch, dinner</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 dark:border-gray-600">
+                <i class="fas fa-trophy text-yellow-500"></i>
+                <div>
+                    <p class="text-sm font-medium text-gray-900 dark:text-gray-100">Achievements</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Goal completions</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 dark:border-gray-600">
+                <i class="fas fa-weight text-blue-500"></i>
+                <div>
+                    <p class="text-sm font-medium text-gray-900 dark:text-gray-100">Check-ins</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Weekly reminders</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 dark:border-gray-600">
+                <i class="fas fa-user-shield text-purple-500"></i>
+                <div>
+                    <p class="text-sm font-medium text-gray-900 dark:text-gray-100">Admin Messages</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">System notifications</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

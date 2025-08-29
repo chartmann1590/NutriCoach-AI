@@ -4,7 +4,11 @@ Client application located at `nutrition_ai_mobile/`.
 
 ### Features
 - Auth, server config, dashboard, search, manual entry, photo analysis
-- Planned: coach chat, analytics, offline, notifications
+- **Real-time Notifications**: Automatic polling every 30 seconds with badge indicators
+- **Smart Battery Management**: Pauses polling when app is backgrounded
+- **Notification Alerts**: SnackBar notifications when new messages arrive  
+- **Expandable FAB**: Integrated notifications access with unread count badges
+- Planned: coach chat, analytics, offline sync
 
 ### Run
 ```bash

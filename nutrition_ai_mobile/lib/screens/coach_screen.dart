@@ -24,6 +24,8 @@ class CoachScreenState extends State<CoachScreen> {
   }
 
   Future<void> _loadMessages() async {
+    if (!mounted) return;
+    
     setState(() {
       _isLoading = true;
       _error = null;
@@ -31,12 +33,16 @@ class CoachScreenState extends State<CoachScreen> {
 
     try {
       final messages = await ApiService.getChatHistory();
+      if (!mounted) return;
+      
       setState(() {
         _messages = messages;
         _isLoading = false;
       });
       _scrollToBottom();
     } catch (e) {
+      if (!mounted) return;
+      
       setState(() {
         _error = e.toString();
         _isLoading = false;
@@ -45,7 +51,7 @@ class CoachScreenState extends State<CoachScreen> {
   }
 
   Future<void> _sendMessage(String message) async {
-    if (message.trim().isEmpty || _isSending) return;
+    if (message.trim().isEmpty || _isSending || !mounted) return;
 
     final userMessage = CoachMessage(
       role: 'user',
@@ -64,6 +70,8 @@ class CoachScreenState extends State<CoachScreen> {
     try {
       final response = await ApiService.sendChatMessage(message);
       
+      if (!mounted) return;
+      
       final assistantMessage = CoachMessage(
         role: 'assistant',
         content: response,
@@ -75,20 +83,20 @@ class CoachScreenState extends State<CoachScreen> {
         _isSending = false;
       });
     } catch (e) {
+      if (!mounted) return;
+      
       setState(() {
         _error = e.toString();
         _isSending = false;
       });
       
       // Show error snackbar
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to send message: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to send message: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
     
     _scrollToBottom();
@@ -109,18 +117,18 @@ class CoachScreenState extends State<CoachScreen> {
   Future<void> _clearHistory() async {
     try {
       await ApiService.clearChatHistory();
+      if (!mounted) return;
+      
       setState(() {
         _messages.clear();
       });
       
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Chat history cleared'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Chat history cleared'),
+          backgroundColor: Colors.green,
+        ),
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

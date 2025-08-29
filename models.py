@@ -23,6 +23,9 @@ class User(UserMixin, db.Model):
     photos = db.relationship('Photo', backref='user', cascade='all, delete-orphan')
     weigh_ins = db.relationship('WeighIn', backref='user', cascade='all, delete-orphan')
     water_intakes = db.relationship('WaterIntake', backref='user', cascade='all, delete-orphan')
+    notifications = db.relationship('Notification', foreign_keys='Notification.user_id', backref='user', cascade='all, delete-orphan')
+    created_notifications = db.relationship('Notification', foreign_keys='Notification.created_by', backref='creator')
+    notification_templates = db.relationship('NotificationTemplate', backref='creator', cascade='all, delete-orphan')
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -241,3 +244,145 @@ class GlobalSettings(db.Model):
             self.value = json.dumps(value)
         else:
             self.value = str(value)
+
+
+class Notification(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    
+    # Notification content
+    title = db.Column(db.String(200), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    notification_type = db.Column(db.String(50), nullable=False)  # 'action', 'reminder', 'admin', 'system'
+    category = db.Column(db.String(50))  # 'meal_reminder', 'food_logged', 'admin_message', 'goal_achieved', etc.
+    
+    # Notification state
+    is_read = db.Column(db.Boolean, default=False, nullable=False)
+    is_dismissed = db.Column(db.Boolean, default=False, nullable=False)
+    priority = db.Column(db.String(20), default='normal')  # 'low', 'normal', 'high', 'urgent'
+    
+    # Metadata
+    action_url = db.Column(db.String(500))  # Optional URL for click action
+    action_data = db.Column(db.Text)  # JSON data for custom actions
+    expires_at = db.Column(db.DateTime)  # Optional expiration
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    read_at = db.Column(db.DateTime)
+    dismissed_at = db.Column(db.DateTime)
+    
+    # Admin/system fields
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'))  # For admin-created notifications
+    
+    def mark_as_read(self):
+        """Mark notification as read"""
+        if not self.is_read:
+            self.is_read = True
+            self.read_at = datetime.utcnow()
+    
+    def dismiss(self):
+        """Dismiss notification"""
+        if not self.is_dismissed:
+            self.is_dismissed = True
+            self.dismissed_at = datetime.utcnow()
+    
+    def get_action_data(self):
+        """Get action data as Python object"""
+        if self.action_data:
+            try:
+                return json.loads(self.action_data)
+            except (json.JSONDecodeError, TypeError):
+                return {}
+        return {}
+    
+    def set_action_data(self, data):
+        """Set action data from Python object"""
+        if data:
+            self.action_data = json.dumps(data)
+        else:
+            self.action_data = None
+    
+    def is_expired(self):
+        """Check if notification has expired"""
+        if self.expires_at:
+            return datetime.utcnow() > self.expires_at
+        return False
+    
+    def to_dict(self):
+        """Convert notification to dictionary for JSON responses"""
+        return {
+            'id': self.id,
+            'title': self.title,
+            'message': self.message,
+            'type': self.notification_type,
+            'category': self.category,
+            'is_read': self.is_read,
+            'is_dismissed': self.is_dismissed,
+            'priority': self.priority,
+            'action_url': self.action_url,
+            'action_data': self.get_action_data(),
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'read_at': self.read_at.isoformat() if self.read_at else None,
+            'expires_at': self.expires_at.isoformat() if self.expires_at else None,
+            'is_expired': self.is_expired()
+        }
+    
+    def __repr__(self):
+        return f'<Notification {self.id}: {self.title} ({self.notification_type})>'
+
+
+class NotificationTemplate(db.Model):
+    """Template for automatic notifications and admin quick-send"""
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False, unique=True)
+    
+    # Template content
+    title_template = db.Column(db.String(200), nullable=False)
+    message_template = db.Column(db.Text, nullable=False)
+    notification_type = db.Column(db.String(50), nullable=False)
+    category = db.Column(db.String(50), nullable=False)
+    priority = db.Column(db.String(20), default='normal')
+    
+    # Template settings
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    is_system_template = db.Column(db.Boolean, default=False)  # System vs user-created
+    
+    # Auto-reminder settings
+    trigger_condition = db.Column(db.String(100))  # 'meal_reminder', 'goal_missed', etc.
+    schedule_pattern = db.Column(db.String(100))  # Cron-like pattern for scheduling
+    
+    # Metadata
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def render_title(self, user=None, **kwargs):
+        """Render title template with user data"""
+        template_vars = kwargs.copy()
+        if user:
+            template_vars.update({
+                'user_name': user.profile.name if user.profile else user.username,
+                'username': user.username
+            })
+        
+        try:
+            return self.title_template.format(**template_vars)
+        except KeyError:
+            return self.title_template
+    
+    def render_message(self, user=None, **kwargs):
+        """Render message template with user data"""
+        template_vars = kwargs.copy()
+        if user:
+            template_vars.update({
+                'user_name': user.profile.name if user.profile else user.username,
+                'username': user.username
+            })
+        
+        try:
+            return self.message_template.format(**template_vars)
+        except KeyError:
+            return self.message_template
+    
+    def __repr__(self):
+        return f'<NotificationTemplate {self.name} ({self.notification_type})>'

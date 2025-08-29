@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
@@ -7,6 +8,8 @@ import '../widgets/expandable_fab.dart';
 import 'server_setup_screen.dart';
 import 'food_search_screen.dart';
 import 'coach_screen.dart';
+import 'notifications_screen.dart';
+import '../models/notification.dart' as app_notification;
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -15,16 +18,47 @@ class DashboardScreen extends StatefulWidget {
   _DashboardScreenState createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingObserver {
   DashboardData? _dashboardData;
   List<FoodLog> _recentLogs = [];
   bool _isLoading = true;
   String? _errorMessage;
+  int _unreadNotificationCount = 0;
+  Timer? _notificationTimer;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance?.addObserver(this);
     _loadDashboardData();
+    _loadNotificationCounts();
+    _startNotificationPolling();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance?.removeObserver(this);
+    _stopNotificationPolling();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.resumed:
+        // App came to foreground - resume polling and refresh counts
+        print('App resumed - starting notification polling');
+        _loadNotificationCounts();
+        _startNotificationPolling();
+        break;
+      case AppLifecycleState.paused:
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.detached:
+        // App went to background - stop polling to save battery
+        print('App paused/inactive - stopping notification polling');
+        _stopNotificationPolling();
+        break;
+    }
   }
 
   double _safeToDouble(dynamic value, [double defaultValue = 0.0]) {
@@ -76,6 +110,81 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _showSessionExpiredDialog();
         }
       }
+    }
+  }
+
+  Future<void> _loadNotificationCounts() async {
+    try {
+      final counts = await ApiService.getNotificationCounts();
+      if (counts.success && mounted) {
+        final previousCount = _unreadNotificationCount;
+        setState(() {
+          _unreadNotificationCount = counts.unreadCount;
+        });
+        
+        // If we got new notifications, show a brief message
+        if (counts.unreadCount > previousCount && previousCount > 0) {
+          final newNotifications = counts.unreadCount - previousCount;
+          _showNewNotificationMessage(newNotifications);
+        }
+      }
+    } catch (e) {
+      // Silently handle errors - notification counts are not critical
+      print('Failed to load notification counts: $e');
+    }
+  }
+
+  void _showNewNotificationMessage(int newCount) {
+    if (!mounted) return;
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          newCount == 1 
+              ? 'You have 1 new notification' 
+              : 'You have $newCount new notifications',
+        ),
+        duration: const Duration(seconds: 2),
+        action: SnackBarAction(
+          label: 'View',
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const NotificationsScreen(),
+              ),
+            ).then((_) => _loadNotificationCounts());
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> _refreshAll() async {
+    await Future.wait([
+      _loadDashboardData(),
+      _loadNotificationCounts(),
+    ]);
+  }
+
+  void _startNotificationPolling() {
+    // Stop any existing timer first
+    _stopNotificationPolling();
+    
+    // Poll every 30 seconds for new notifications
+    print('Starting notification polling (every 30 seconds)');
+    _notificationTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      if (mounted) {
+        print('Polling for notification updates...');
+        _loadNotificationCounts();
+      }
+    });
+  }
+
+  void _stopNotificationPolling() {
+    if (_notificationTimer != null) {
+      print('Stopping notification polling');
+      _notificationTimer?.cancel();
+      _notificationTimer = null;
     }
   }
 
@@ -612,7 +721,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               if (value == 'logout') {
                 _logout();
               } else if (value == 'refresh') {
-                _loadDashboardData();
+                _refreshAll();
               }
             },
             itemBuilder: (BuildContext context) {
@@ -679,7 +788,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                 // Always show dashboard content (with fallback if no data)
-                Expanded(child: _buildDashboardContent()),
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: _refreshAll,
+                    child: _buildDashboardContent(),
+                  ),
+                ),
               ],
             ),
       floatingActionButton: ExpandableFab(
@@ -696,6 +810,47 @@ class _DashboardScreenState extends State<DashboardScreen> {
             icon: const Icon(Icons.add),
             color: Colors.green.shade600,
             tooltip: 'Log Food',
+          ),
+          ActionButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const NotificationsScreen(),
+                ),
+              ).then((_) => _loadNotificationCounts()); // Refresh count when returning
+            },
+            icon: _unreadNotificationCount > 0
+                ? Stack(
+                    children: [
+                      const Icon(Icons.notifications),
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 12,
+                            minHeight: 12,
+                          ),
+                          child: Text(
+                            '$_unreadNotificationCount',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 8,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                : const Icon(Icons.notifications),
+            color: Colors.orange.shade600,
+            tooltip: 'Notifications',
           ),
           ActionButton(
             onPressed: () {

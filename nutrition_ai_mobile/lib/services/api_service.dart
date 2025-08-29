@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import '../models/food_log.dart';
 import '../models/food_item.dart';
 import '../models/coach_message.dart';
+import '../models/notification.dart';
 
 class ApiService {
   static String? _baseUrl;
@@ -715,6 +716,192 @@ class ApiService {
         rethrow;
       }
       throw Exception('Photo analysis failed: $e');
+    }
+  }
+
+  // Notifications functionality
+  static Future<NotificationResponse> getNotifications({
+    int limit = 50,
+    int offset = 0,
+    bool unreadOnly = false,
+  }) async {
+    if (_baseUrl == null || _sessionCookie == null) {
+      throw Exception('Not authenticated. Please login first.');
+    }
+
+    try {
+      print('Getting notifications: limit=$limit, offset=$offset, unreadOnly=$unreadOnly');
+
+      final queryParams = <String, String>{
+        'limit': limit.toString(),
+        'offset': offset.toString(),
+        'unread_only': unreadOnly.toString(),
+      };
+
+      final uri = Uri.parse('$_baseUrl/api/notifications').replace(queryParameters: queryParams);
+      final response = await http.get(uri, headers: _headers).timeout(const Duration(seconds: 15));
+
+      print('Notifications response: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print('Raw response data: ${response.body}');
+        print('Parsed data keys: ${data.keys.toList()}');
+        print('Success field: ${data['success']}');
+        print('Found ${data['notifications']?.length ?? 0} notifications');
+        return NotificationResponse.fromJson(data);
+      } else if (response.statusCode == 401) {
+        clearSession();
+        throw Exception('Session expired. Please login again.');
+      } else {
+        throw Exception('Failed to load notifications: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Notifications error: $e');
+      if (e.toString().contains('Session expired')) {
+        rethrow;
+      }
+      throw Exception('Failed to load notifications: $e');
+    }
+  }
+
+  static Future<NotificationCounts> getNotificationCounts() async {
+    if (_baseUrl == null || _sessionCookie == null) {
+      throw Exception('Not authenticated. Please login first.');
+    }
+
+    try {
+      print('Getting notification counts');
+
+      final response = await http.get(
+        Uri.parse('$_baseUrl/api/notifications/counts'),
+        headers: _headers,
+      ).timeout(const Duration(seconds: 10));
+
+      print('Notification counts response: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return NotificationCounts.fromJson(data);
+      } else if (response.statusCode == 401) {
+        clearSession();
+        throw Exception('Session expired. Please login again.');
+      } else {
+        throw Exception('Failed to load notification counts: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Notification counts error: $e');
+      if (e.toString().contains('Session expired')) {
+        rethrow;
+      }
+      throw Exception('Failed to load notification counts: $e');
+    }
+  }
+
+  static Future<bool> markNotificationRead(int notificationId) async {
+    if (_baseUrl == null || _sessionCookie == null) {
+      throw Exception('Not authenticated. Please login first.');
+    }
+
+    try {
+      print('Marking notification as read: $notificationId');
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/api/notifications/$notificationId/mark-read'),
+        headers: _headers,
+      ).timeout(const Duration(seconds: 10));
+
+      print('Mark read response: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        return true;
+      } else if (response.statusCode == 404) {
+        print('Notification not found: $notificationId');
+        return false;
+      } else if (response.statusCode == 401) {
+        clearSession();
+        throw Exception('Session expired. Please login again.');
+      } else {
+        print('Failed to mark notification as read: ${response.statusCode}');
+        return false;
+      }
+    } catch (e) {
+      print('Mark notification read error: $e');
+      if (e.toString().contains('Session expired')) {
+        rethrow;
+      }
+      return false;
+    }
+  }
+
+  static Future<bool> markAllNotificationsRead() async {
+    if (_baseUrl == null || _sessionCookie == null) {
+      throw Exception('Not authenticated. Please login first.');
+    }
+
+    try {
+      print('Marking all notifications as read');
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/api/notifications/mark-all-read'),
+        headers: _headers,
+      ).timeout(const Duration(seconds: 15));
+
+      print('Mark all read response: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print('Marked ${data['count'] ?? 0} notifications as read');
+        return true;
+      } else if (response.statusCode == 401) {
+        clearSession();
+        throw Exception('Session expired. Please login again.');
+      } else {
+        print('Failed to mark all notifications as read: ${response.statusCode}');
+        return false;
+      }
+    } catch (e) {
+      print('Mark all notifications read error: $e');
+      if (e.toString().contains('Session expired')) {
+        rethrow;
+      }
+      return false;
+    }
+  }
+
+  static Future<bool> deleteNotification(int notificationId) async {
+    if (_baseUrl == null || _sessionCookie == null) {
+      throw Exception('Not authenticated. Please login first.');
+    }
+
+    try {
+      print('Deleting notification: $notificationId');
+
+      final response = await http.delete(
+        Uri.parse('$_baseUrl/api/notifications/$notificationId'),
+        headers: _headers,
+      ).timeout(const Duration(seconds: 10));
+
+      print('Delete notification response: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        return true;
+      } else if (response.statusCode == 404) {
+        print('Notification not found: $notificationId');
+        return false;
+      } else if (response.statusCode == 401) {
+        clearSession();
+        throw Exception('Session expired. Please login again.');
+      } else {
+        print('Failed to delete notification: ${response.statusCode}');
+        return false;
+      }
+    } catch (e) {
+      print('Delete notification error: $e');
+      if (e.toString().contains('Session expired')) {
+        rethrow;
+      }
+      return false;
     }
   }
 }

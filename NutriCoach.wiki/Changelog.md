@@ -1,5 +1,13 @@
 ## Changelog
 
+### v1.3.0 (Current)
+- **Complete Notification System**: Backend models, admin interface, REST API
+- **Real-time Web Notifications**: Dropdown center with automatic polling every 30 seconds
+- **Mobile Notification Polling**: Auto-refresh badges with smart battery management
+- **Enhanced Mobile App**: SnackBar alerts, expandable FAB integration, lifecycle management
+- **API Improvements**: Fixed duplicate endpoints, unified mobile/web notification APIs
+- **Bug Fixes**: Web notification flashing, persistent badge indicators, API response format issues
+
 ### v1.2.0
 - Default system prompts for AI coach
 - Flutter mobile companion app

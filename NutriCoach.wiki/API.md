@@ -35,6 +35,13 @@ Spec: `http://localhost:5001/openapi.yaml`
   - `POST /api/models/pull` `{ model }`
 - Settings:
   - `POST /api/settings/test_ollama` `{ ollama_url }`
+- Notifications:
+  - `GET /api/notifications?limit=20&offset=0&unread_only=false`
+  - `GET /api/notifications/counts`
+  - `POST /api/notifications/{id}/mark-read`
+  - `POST /api/notifications/mark-all-read`
+  - `DELETE /api/notifications/{id}`
+  - `POST /api/notifications/{id}/dismiss`
 
 ### Response Shape
 Unless streaming, responses are JSON with a `data` or direct fields, or `error` on failure. CSV download for export.

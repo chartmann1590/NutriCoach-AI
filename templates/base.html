@@ -234,6 +234,112 @@
                         </div>
                         
                         <div class="flex items-center space-x-4">
+                            <!-- Notifications -->
+                            <div x-data="notificationCenter()" class="relative">
+                                <button @click="toggleNotifications()" 
+                                        class="relative p-2 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                                    <i class="fas fa-bell"></i>
+                                    <!-- Notification badge -->
+                                    <span x-show="unreadCount > 0" 
+                                          x-text="unreadCount > 99 ? '99+' : unreadCount"
+                                          class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold"></span>
+                                </button>
+                                
+                                <!-- Notification dropdown -->
+                                <div x-show="isOpen" 
+                                     @click.outside="isOpen = false"
+                                     x-transition:enter="transition ease-out duration-200"
+                                     x-transition:enter-start="opacity-0 scale-95"
+                                     x-transition:enter-end="opacity-1 scale-100"
+                                     x-transition:leave="transition ease-in duration-150"
+                                     x-transition:leave-start="opacity-1 scale-100"
+                                     x-transition:leave-end="opacity-0 scale-95"
+                                     class="absolute right-0 mt-2 w-96 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+                                    
+                                    <!-- Header -->
+                                    <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                                        <div class="flex items-center justify-between">
+                                            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Notifications</h3>
+                                            <div class="flex items-center space-x-2">
+                                                <button @click="markAllAsRead()" 
+                                                        x-show="unreadCount > 0"
+                                                        class="text-sm text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
+                                                    Mark all read
+                                                </button>
+                                                <button @click="refreshNotifications()" 
+                                                        class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                                                    <i class="fas fa-sync-alt"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Notification list -->
+                                    <div class="max-h-96 overflow-y-auto custom-scrollbar">
+                                        <template x-for="notification in notifications" :key="notification.id">
+                                            <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                                                 :class="notification.is_read ? 'opacity-75' : ''">
+                                                
+                                                <div class="flex items-start space-x-3">
+                                                    <!-- Priority/Type icon -->
+                                                    <div class="flex-shrink-0 mt-1">
+                                                        <i :class="getNotificationIcon(notification)" 
+                                                           class="text-sm"
+                                                           :style="`color: ${getNotificationColor(notification)}`"></i>
+                                                    </div>
+                                                    
+                                                    <!-- Content -->
+                                                    <div class="flex-1 min-w-0">
+                                                        <p class="text-sm font-medium text-gray-900 dark:text-gray-100" 
+                                                           x-text="notification.title"></p>
+                                                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1" 
+                                                           x-text="notification.message"></p>
+                                                        <p class="text-xs text-gray-400 dark:text-gray-500 mt-1" 
+                                                           x-text="formatTime(notification.created_at)"></p>
+                                                    </div>
+                                                    
+                                                    <!-- Actions -->
+                                                    <div class="flex-shrink-0 flex items-center space-x-1">
+                                                        <button @click.stop="markAsRead(notification.id)" 
+                                                                x-show="!notification.is_read"
+                                                                class="text-xs text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
+                                                            <i class="fas fa-check"></i>
+                                                        </button>
+                                                        <button @click.stop="dismissNotification(notification.id)" 
+                                                                class="text-xs text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                                                            <i class="fas fa-times"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Action button -->
+                                                <div x-show="notification.action_url" class="mt-2">
+                                                    <button @click="handleNotificationAction(notification)" 
+                                                            class="text-sm text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 font-medium">
+                                                        View Details →
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </template>
+                                        
+                                        <!-- Empty state -->
+                                        <div x-show="notifications.length === 0" 
+                                             class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                                            <i class="fas fa-bell-slash text-2xl mb-2"></i>
+                                            <p class="text-sm">No notifications</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Footer -->
+                                    <div class="px-4 py-3 border-t border-gray-200 dark:border-gray-700">
+                                        <button @click="viewAllNotifications()" 
+                                                class="w-full text-sm text-center text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 font-medium">
+                                            View All Notifications
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <!-- Quick actions -->
                             <button onclick="showQuickLog()" 
                                     class="p-2 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
@@ -373,6 +479,235 @@
                 </svg>
             `;
         }
+        
+        // Notification Center Component
+        function notificationCenter() {
+            return {
+                isOpen: false,
+                notifications: [],
+                unreadCount: 0,
+                loading: false,
+                
+                init() {
+                    // Only load counts on init, not full notifications
+                    this.loadNotificationCounts();
+                    // Poll for new notifications every 30 seconds
+                    setInterval(() => {
+                        this.loadNotificationCounts();
+                    }, 30000);
+                },
+                
+                toggleNotifications() {
+                    this.isOpen = !this.isOpen;
+                    if (this.isOpen) {
+                        this.loadNotifications();
+                    }
+                },
+                
+                async loadNotifications() {
+                    if (this.loading) return;
+                    
+                    this.loading = true;
+                    try {
+                        const response = await fetch('/api/notifications?limit=10');
+                        const data = await response.json();
+                        
+                        if (response.ok && data.success) {
+                            this.notifications = data.notifications || [];
+                            this.unreadCount = data.unread_count || 0;
+                        }
+                    } catch (error) {
+                        console.error('Error loading notifications:', error);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                
+                async loadNotificationCounts() {
+                    try {
+                        const response = await fetch('/api/notifications/counts');
+                        const data = await response.json();
+                        
+                        console.log('Notification counts response:', data);
+                        
+                        if (response.ok && data.success) {
+                            const newCount = data.unread_count || 0;
+                            console.log('Updating unread count from', this.unreadCount, 'to', newCount);
+                            this.unreadCount = newCount;
+                        } else {
+                            console.warn('Failed to load notification counts:', data);
+                        }
+                    } catch (error) {
+                        console.error('Error loading notification counts:', error);
+                    }
+                },
+                
+                async markAsRead(notificationId) {
+                    try {
+                        const response = await fetch(`/api/notifications/${notificationId}/mark-read`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': this.getCSRFToken()
+                            }
+                        });
+                        
+                        if (response.ok) {
+                            const notification = this.notifications.find(n => n.id === notificationId);
+                            if (notification && !notification.is_read) {
+                                notification.is_read = true;
+                                notification.read_at = new Date().toISOString();
+                                this.unreadCount = Math.max(0, this.unreadCount - 1);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error marking notification as read:', error);
+                    }
+                },
+                
+                async markAllAsRead() {
+                    try {
+                        const response = await fetch('/api/notifications/mark-all-read', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': this.getCSRFToken()
+                            }
+                        });
+                        
+                        if (response.ok) {
+                            this.notifications.forEach(n => {
+                                n.is_read = true;
+                                n.read_at = new Date().toISOString();
+                            });
+                            this.unreadCount = 0;
+                        }
+                    } catch (error) {
+                        console.error('Error marking all notifications as read:', error);
+                    }
+                },
+                
+                async dismissNotification(notificationId) {
+                    try {
+                        const response = await fetch(`/api/notifications/${notificationId}/dismiss`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': this.getCSRFToken()
+                            }
+                        });
+                        
+                        if (response.ok) {
+                            // Find notification before removing it
+                            const notification = this.notifications.find(n => n.id === notificationId);
+                            if (notification && !notification.is_read) {
+                                this.unreadCount = Math.max(0, this.unreadCount - 1);
+                            }
+                            // Remove from array
+                            this.notifications = this.notifications.filter(n => n.id !== notificationId);
+                        }
+                    } catch (error) {
+                        console.error('Error dismissing notification:', error);
+                    }
+                },
+                
+                refreshNotifications() {
+                    this.loadNotifications();
+                },
+                
+                handleNotificationAction(notification) {
+                    if (notification.action_url) {
+                        // Mark as read first
+                        if (!notification.is_read) {
+                            this.markAsRead(notification.id);
+                        }
+                        // Navigate to action URL
+                        window.location.href = notification.action_url;
+                    }
+                },
+                
+                viewAllNotifications() {
+                    this.isOpen = false;
+                    // Create a full notifications page route later
+                    window.location.href = '/notifications';
+                },
+                
+                getNotificationIcon(notification) {
+                    const iconMap = {
+                        'action': 'fas fa-check-circle',
+                        'reminder': 'fas fa-clock',
+                        'admin': 'fas fa-user-shield',
+                        'system': 'fas fa-cog'
+                    };
+                    
+                    return iconMap[notification.type] || 'fas fa-bell';
+                },
+                
+                getNotificationColor(notification) {
+                    const colorMap = {
+                        'urgent': '#ef4444',     // red-500
+                        'high': '#f59e0b',       // amber-500
+                        'normal': '#6366f1',     // indigo-500
+                        'low': '#6b7280'         // gray-500
+                    };
+                    
+                    return colorMap[notification.priority] || '#6b7280';
+                },
+                
+                formatTime(timestamp) {
+                    if (!timestamp) return '';
+                    
+                    const now = new Date();
+                    const date = new Date(timestamp);
+                    const diff = Math.floor((now - date) / 1000);
+                    
+                    if (diff < 60) return 'Just now';
+                    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+                    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+                    if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+                    
+                    return date.toLocaleDateString();
+                },
+                
+                getCSRFToken() {
+                    const token = document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
+                    if (!token) {
+                        // Fallback to cookie method
+                        const match = document.cookie.match(/csrf_token=([^;]+)/);
+                        return match ? match[1] : '';
+                    }
+                    return token;
+                }
+            };
+        }
+        
+        // Global function to create notifications (for other scripts)
+        window.createTestNotification = async function(type = 'system', priority = 'normal') {
+            try {
+                const response = await fetch('/api/notifications/test', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || ''
+                    },
+                    body: JSON.stringify({
+                        title: `Test ${type} notification`,
+                        message: `This is a test ${priority} priority notification of type ${type}.`,
+                        type: type,
+                        priority: priority
+                    })
+                });
+                
+                if (response.ok) {
+                    console.log('Test notification created');
+                    // Refresh notification center
+                    const event = new CustomEvent('refreshNotifications');
+                    document.dispatchEvent(event);
+                }
+            } catch (error) {
+                console.error('Error creating test notification:', error);
+            }
+        };
     </script>
     
     {% block scripts %}{% endblock %}

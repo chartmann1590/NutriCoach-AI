@@ -4,12 +4,13 @@ import json
 import csv
 from datetime import datetime, timedelta
 from io import StringIO
-from flask import Blueprint, request, jsonify, current_app, Response, stream_template
+from flask import Blueprint, request, jsonify, current_app, Response, stream_template, abort
 from flask_login import login_required, current_user
+from functools import wraps
 from werkzeug.utils import secure_filename
 from PIL import Image
 
-from models import FoodLog, FoodItem, CoachMessage, Photo, WeighIn, WaterIntake, Settings
+from models import FoodLog, FoodItem, CoachMessage, Photo, WeighIn, WaterIntake, Settings, User, NotificationTemplate, Notification
 from extensions import db
 from services.ollama_client import OllamaClient
 from services.nutrition_search import NutritionSearch
@@ -234,6 +235,13 @@ def create_food_log():
         
         db.session.add(log)
         db.session.commit()
+        
+        # Create notification for successful food logging
+        try:
+            from services.notification_service import ActionNotificationService
+            ActionNotificationService.notify_food_logged(current_user.id, log)
+        except Exception as e:
+            current_app.logger.error(f"Failed to create food logged notification: {e}")
         
         # Return different response based on request type
         if request.is_json:
@@ -1101,3 +1109,443 @@ Guidelines:
 - If asked for medical advice, recommend consulting a healthcare professional
 - Keep responses concise and practical
 - Use the nutrition search results when making food recommendations"""
+
+
+# =============================================================================
+# NOTIFICATION API ENDPOINTS
+# =============================================================================
+
+
+
+
+
+
+@api_bp.route('/notifications/read', methods=['POST'])
+@login_required
+def mark_multiple_notifications_read():
+    """Mark multiple notifications as read"""
+    try:
+        data = request.get_json() or {}
+        notification_ids = data.get('notification_ids', [])
+        
+        if not notification_ids:
+            return jsonify({'error': 'No notification IDs provided'}), 400
+        
+        from services.notification_service import NotificationService
+        
+        count = NotificationService.mark_multiple_as_read(notification_ids, current_user.id)
+        
+        return jsonify({
+            'message': f'Marked {count} notifications as read',
+            'updated_count': count
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error marking multiple notifications as read: {e}")
+        return jsonify({'error': 'Failed to mark notifications as read'}), 500
+
+
+
+
+@api_bp.route('/notifications/<int:notification_id>/dismiss', methods=['POST'])
+@login_required
+def dismiss_notification(notification_id):
+    """Dismiss a specific notification"""
+    try:
+        from services.notification_service import NotificationService
+        
+        success = NotificationService.dismiss_notification(notification_id, current_user.id)
+        
+        if success:
+            return jsonify({'message': 'Notification dismissed'})
+        else:
+            return jsonify({'error': 'Notification not found'}), 404
+            
+    except Exception as e:
+        current_app.logger.error(f"Error dismissing notification: {e}")
+        return jsonify({'error': 'Failed to dismiss notification'}), 500
+
+
+@api_bp.route('/notifications/test', methods=['POST'])
+@login_required
+def create_test_notification():
+    """Create a test notification (for development/testing)"""
+    try:
+        data = request.get_json() or {}
+        
+        from services.notification_service import NotificationService
+        
+        notification = NotificationService.create_notification(
+            user_id=current_user.id,
+            title=data.get('title', 'Test Notification'),
+            message=data.get('message', 'This is a test notification.'),
+            notification_type=data.get('type', 'system'),
+            category=data.get('category', 'test'),
+            priority=data.get('priority', 'normal')
+        )
+        
+        return jsonify({
+            'message': 'Test notification created',
+            'notification': notification.to_dict()
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error creating test notification: {e}")
+        return jsonify({'error': 'Failed to create test notification'}), 500
+
+
+# =============================================================================
+# ADMIN API ENDPOINTS
+# =============================================================================
+
+def admin_required(f):
+    """Decorator to require admin access for API endpoints"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated:
+            return jsonify({'error': 'Authentication required'}), 401
+        if not current_user.is_admin:
+            return jsonify({'error': 'Admin access required'}), 403
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+@api_bp.route('/admin/users-list')
+@login_required
+@admin_required
+def admin_users_list():
+    """API endpoint for getting list of users"""
+    try:
+        users = User.query.filter_by(is_active=True).order_by(User.username).all()
+        
+        users_data = []
+        for user in users:
+            users_data.append({
+                'id': user.id,
+                'name': user.username,
+                'email': user.username  # Using username as email for display
+            })
+        
+        return jsonify({'users': users_data})
+        
+    except Exception as e:
+        current_app.logger.error(f"Error getting users list: {e}")
+        return jsonify({'error': 'Failed to get users list'}), 500
+
+
+@api_bp.route('/admin/notification-templates')
+@login_required
+@admin_required
+def admin_notification_templates():
+    """API endpoint for getting notification templates"""
+    try:
+        templates = NotificationTemplate.query.filter_by(is_active=True).order_by(NotificationTemplate.name).all()
+        
+        templates_data = []
+        for template in templates:
+            templates_data.append({
+                'id': template.id,
+                'name': template.name,
+                'title_template': template.title_template,
+                'message_template': template.message_template,
+                'category': template.category,
+                'priority': template.priority
+            })
+        
+        return jsonify({'templates': templates_data})
+        
+    except Exception as e:
+        current_app.logger.error(f"Error getting notification templates: {e}")
+        return jsonify({'error': 'Failed to get notification templates'}), 500
+
+
+@api_bp.route('/admin/send-notification', methods=['POST'])
+@login_required
+@admin_required
+def admin_send_notification():
+    """API endpoint for sending notifications from dashboard"""
+    try:
+        data = request.get_json()
+        
+        recipient_type = data.get('recipient_type')
+        title = data.get('title', '').strip()
+        message = data.get('message', '').strip()
+        priority = data.get('priority', 'normal')
+        template_id = data.get('template_id')
+        user_id = data.get('user_id')
+        
+        if not title or not message:
+            return jsonify({'success': False, 'message': 'Title and message are required'}), 400
+        
+        from services.notification_service import AdminNotificationService
+        
+        count = 0
+        
+        if recipient_type == 'specific' and user_id:
+            # Send to specific user
+            notification = AdminNotificationService.send_to_user(
+                admin_user_id=current_user.id,
+                target_user_id=int(user_id),
+                title=title,
+                message=message,
+                priority=priority
+            )
+            if notification:
+                count = 1
+                
+        elif recipient_type == 'all':
+            # Send to all users
+            users = User.query.filter_by(is_active=True).all()
+            for user in users:
+                notification = AdminNotificationService.send_to_user(
+                    admin_user_id=current_user.id,
+                    target_user_id=user.id,
+                    title=title,
+                    message=message,
+                    priority=priority
+                )
+                if notification:
+                    count += 1
+                    
+        elif recipient_type == 'active':
+            # Send to active users only
+            users = User.query.filter_by(is_active=True).all()
+            for user in users:
+                notification = AdminNotificationService.send_to_user(
+                    admin_user_id=current_user.id,
+                    target_user_id=user.id,
+                    title=title,
+                    message=message,
+                    priority=priority
+                )
+                if notification:
+                    count += 1
+                    
+        elif recipient_type == 'admin':
+            # Send to admin users only
+            users = User.query.filter_by(is_admin=True, is_active=True).all()
+            for user in users:
+                notification = AdminNotificationService.send_to_user(
+                    admin_user_id=current_user.id,
+                    target_user_id=user.id,
+                    title=title,
+                    message=message,
+                    priority=priority
+                )
+                if notification:
+                    count += 1
+        
+        # Log admin action (simplified for API)
+        current_app.logger.info(f"Admin {current_user.username} sent notification '{title}' to {count} users")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Notification sent to {count} users',
+            'count': count
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error sending notification via API: {e}")
+        return jsonify({'success': False, 'message': 'Failed to send notification'}), 500
+
+
+@api_bp.route('/admin/test-notification', methods=['POST'])
+@login_required
+@admin_required
+def admin_test_notification():
+    """API endpoint for sending test notifications"""
+    try:
+        from services.notification_service import AdminNotificationService
+        
+        # Send test notification to all admin users
+        admin_users = User.query.filter_by(is_admin=True, is_active=True).all()
+        count = 0
+        
+        for user in admin_users:
+            notification = AdminNotificationService.send_to_user(
+                admin_user_id=current_user.id,
+                target_user_id=user.id,
+                title="🧪 Test Notification",
+                message="This is a test notification to verify the system is working properly. If you received this, the notification system is functioning correctly!",
+                priority="normal"
+            )
+            if notification:
+                count += 1
+        
+        current_app.logger.info(f"Admin {current_user.username} sent test notification to {count} admin users")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Test notification sent to {count} admin users',
+            'count': count
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error sending test notification: {e}")
+        return jsonify({'success': False, 'message': 'Failed to send test notification'}), 500
+
+
+# Mobile Notifications API Endpoints
+@api_bp.route('/notifications', methods=['GET'])
+@login_required
+def get_notifications():
+    """Get notifications for the current user (mobile API)"""
+    try:
+        # Parse query parameters
+        limit = request.args.get('limit', 50, type=int)
+        offset = request.args.get('offset', 0, type=int)
+        unread_only = request.args.get('unread_only', 'false').lower() == 'true'
+        
+        current_app.logger.info(f"Mobile notifications request: user_id={current_user.id}, limit={limit}, offset={offset}, unread_only={unread_only}")
+        
+        # Build query
+        query = Notification.query.filter_by(user_id=current_user.id)
+        
+        if unread_only:
+            query = query.filter_by(is_read=False)
+        
+        # Get notifications with pagination
+        notifications = query.order_by(Notification.created_at.desc())\
+                           .offset(offset)\
+                           .limit(limit)\
+                           .all()
+        
+        # Get total count
+        total_query = Notification.query.filter_by(user_id=current_user.id)
+        if unread_only:
+            total_query = total_query.filter_by(is_read=False)
+        total_count = total_query.count()
+        
+        # Get unread count
+        unread_count = Notification.query.filter_by(user_id=current_user.id, is_read=False).count()
+        
+        # Serialize notifications
+        notifications_data = []
+        for notification in notifications:
+            notifications_data.append({
+                'id': notification.id,
+                'title': notification.title,
+                'message': notification.message,
+                'type': notification.notification_type,
+                'category': notification.category,
+                'priority': notification.priority,
+                'is_read': notification.is_read,
+                'created_at': notification.created_at.isoformat(),
+                'read_at': notification.read_at.isoformat() if notification.read_at else None,
+            })
+        
+        current_app.logger.info(f"Returning {len(notifications_data)} notifications, total_count={total_count}, unread_count={unread_count}")
+        
+        return jsonify({
+            'success': True,
+            'notifications': notifications_data,
+            'total_count': total_count,
+            'unread_count': unread_count,
+            'has_more': len(notifications) == limit and (offset + limit) < total_count
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error fetching notifications: {e}")
+        return jsonify({'success': False, 'message': 'Failed to load notifications'}), 500
+
+
+@api_bp.route('/notifications/counts', methods=['GET'])
+@login_required
+def get_notification_counts():
+    """Get notification counts for the current user (mobile API)"""
+    try:
+        total_count = Notification.query.filter_by(user_id=current_user.id).count()
+        unread_count = Notification.query.filter_by(user_id=current_user.id, is_read=False).count()
+        
+        return jsonify({
+            'success': True,
+            'total_count': total_count,
+            'unread_count': unread_count
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error fetching notification counts: {e}")
+        return jsonify({'success': False, 'message': 'Failed to load notification counts'}), 500
+
+
+@api_bp.route('/notifications/<int:notification_id>/mark-read', methods=['POST'])
+@login_required
+def mark_notification_read(notification_id):
+    """Mark a specific notification as read (mobile API)"""
+    try:
+        notification = Notification.query.filter_by(
+            id=notification_id, 
+            user_id=current_user.id
+        ).first()
+        
+        if not notification:
+            return jsonify({'success': False, 'message': 'Notification not found'}), 404
+        
+        if not notification.is_read:
+            notification.is_read = True
+            notification.read_at = datetime.utcnow()
+            db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Notification marked as read'
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error marking notification as read: {e}")
+        return jsonify({'success': False, 'message': 'Failed to mark notification as read'}), 500
+
+
+@api_bp.route('/notifications/mark-all-read', methods=['POST'])
+@login_required
+def mark_all_notifications_read():
+    """Mark all notifications as read for current user (mobile API)"""
+    try:
+        unread_notifications = Notification.query.filter_by(
+            user_id=current_user.id,
+            is_read=False
+        ).all()
+        
+        count = 0
+        for notification in unread_notifications:
+            notification.is_read = True
+            notification.read_at = datetime.utcnow()
+            count += 1
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Marked {count} notifications as read',
+            'count': count
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error marking all notifications as read: {e}")
+        return jsonify({'success': False, 'message': 'Failed to mark notifications as read'}), 500
+
+
+@api_bp.route('/notifications/<int:notification_id>', methods=['DELETE'])
+@login_required
+def delete_notification(notification_id):
+    """Delete a specific notification (mobile API)"""
+    try:
+        notification = Notification.query.filter_by(
+            id=notification_id, 
+            user_id=current_user.id
+        ).first()
+        
+        if not notification:
+            return jsonify({'success': False, 'message': 'Notification not found'}), 404
+        
+        db.session.delete(notification)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Notification deleted'
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error deleting notification: {e}")
+        return jsonify({'success': False, 'message': 'Failed to delete notification'}), 500

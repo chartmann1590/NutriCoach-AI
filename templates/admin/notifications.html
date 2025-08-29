@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications - Admin - NutriCoach{% endblock %}
+{% block page_title %}Admin Notifications{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-bell text-blue-600 text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Notifications</p>
+                    <p class="text-2xl font-semibold text-gray-900 dark:text-gray-100">{{ stats.total }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-exclamation-circle text-orange-600 text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Unread</p>
+                    <p class="text-2xl font-semibold text-gray-900 dark:text-gray-100">{{ stats.unread }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-calendar-day text-green-600 text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Sent Today</p>
+                    <p class="text-2xl font-semibold text-gray-900 dark:text-gray-100">{{ stats.today }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-file-alt text-purple-600 text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Templates</p>
+                    <p class="text-2xl font-semibold text-gray-900 dark:text-gray-100">{{ stats.templates }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Notification Management</h3>
+            <div class="flex space-x-3">
+                <a href="{{ url_for('admin.notification_templates') }}" 
+                   class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <i class="fas fa-file-alt mr-2"></i>
+                    Manage Templates
+                </a>
+                <a href="{{ url_for('admin.send_notification') }}" 
+                   class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                    <i class="fas fa-paper-plane mr-2"></i>
+                    Send Notification
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Notifications -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-600">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Recent Notifications</h3>
+        </div>
+        <div class="divide-y divide-gray-200 dark:divide-gray-600">
+            {% for notification in notifications %}
+                <div class="px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-start space-x-3">
+                            <div class="flex-shrink-0">
+                                {% if notification.priority == 'urgent' %}
+                                    <i class="fas fa-exclamation-triangle text-red-500"></i>
+                                {% elif notification.priority == 'high' %}
+                                    <i class="fas fa-exclamation-circle text-orange-500"></i>
+                                {% else %}
+                                    <i class="fas fa-info-circle text-blue-500"></i>
+                                {% endif %}
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                    {{ notification.title }}
+                                </p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">
+                                    {{ notification.message[:100] }}{% if notification.message|length > 100 %}...{% endif %}
+                                </p>
+                                <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                                    To: User #{{ notification.user_id }} • 
+                                    {{ notification.created_at.strftime('%Y-%m-%d %H:%M') }} • 
+                                    {% if notification.is_read %}Read{% else %}Unread{% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                {% if notification.priority == 'urgent' %}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200{% elif notification.priority == 'high' %}bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200{% else %}bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200{% endif %}">
+                                {{ notification.priority.title() }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-bell-slash text-4xl mb-4"></i>
+                    <p>No notifications found</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

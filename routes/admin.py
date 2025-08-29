@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, abort
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, abort, current_app
 from flask_login import login_required, current_user
 from functools import wraps
 from datetime import datetime, timedelta
@@ -6,10 +6,11 @@ from sqlalchemy import func, desc, and_
 import os
 import json
 
-from models import User, Profile, Settings, FoodLog, SystemLog, GlobalSettings, db
+from models import User, Profile, Settings, FoodLog, SystemLog, GlobalSettings, Notification, NotificationTemplate, db
 from forms.admin import (AdminLoginForm, CreateUserForm, EditUserForm, OllamaSettingsForm, 
                         GlobalSettingForm, SystemMaintenanceForm, BulkUserActionForm)
 from services.ollama_client import OllamaClient
+from services.notification_service import AdminNotificationService
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -92,8 +93,17 @@ def dashboard():
         'last_backup': _get_last_backup_time()
     }
     
+    # Get notification statistics
+    today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    notification_stats = {
+        'total_notifications': Notification.query.count(),
+        'active_templates': NotificationTemplate.query.filter_by(is_active=True).count(),
+        'sent_today': Notification.query.filter(Notification.created_at >= today).count()
+    }
+    
     return render_template('admin/dashboard.html', stats=stats, 
-                         daily_registrations=daily_registrations, health=health)
+                         daily_registrations=daily_registrations, health=health,
+                         notification_stats=notification_stats)
 
 
 @admin_bp.route('/users')
@@ -648,3 +658,314 @@ def _get_disk_usage():
 def _get_last_backup_time():
     """Get last backup time (placeholder)"""
     return None  # To be implemented based on backup strategy
+
+
+# =============================================================================
+# NOTIFICATION MANAGEMENT ROUTES
+# =============================================================================
+
+@admin_bp.route('/notifications')
+@login_required
+@admin_required
+def notifications():
+    """Admin notification management dashboard"""
+    try:
+        # Get notification statistics
+        total_notifications = Notification.query.count()
+        unread_notifications = Notification.query.filter_by(is_read=False).count()
+        today_notifications = Notification.query.filter(
+            Notification.created_at >= datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        ).count()
+        
+        # Get recent notifications
+        recent_notifications = Notification.query\
+            .order_by(desc(Notification.created_at))\
+            .limit(20)\
+            .all()
+        
+        # Get notification templates
+        templates = NotificationTemplate.query.filter_by(is_active=True)\
+            .order_by(NotificationTemplate.name)\
+            .all()
+        
+        stats = {
+            'total': total_notifications,
+            'unread': unread_notifications,
+            'today': today_notifications,
+            'templates': len(templates)
+        }
+        
+        return render_template('admin/notifications.html', 
+                             stats=stats,
+                             notifications=recent_notifications,
+                             templates=templates)
+        
+    except Exception as e:
+        current_app.logger.error(f"Error loading admin notifications: {e}")
+        flash('Error loading notification data', 'error')
+        return redirect(url_for('admin.dashboard'))
+
+
+@admin_bp.route('/notifications/send', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def send_notification():
+    """Send notification to users"""
+    if request.method == 'POST':
+        try:
+            data = request.get_json() or request.form
+            
+            title = data.get('title', '').strip()
+            message = data.get('message', '').strip()
+            priority = data.get('priority', 'normal')
+            recipient_type = data.get('recipient_type', 'all')  # 'all', 'specific', 'active'
+            user_ids = data.get('user_ids', [])
+            
+            if not title or not message:
+                return jsonify({'error': 'Title and message are required'}), 400
+            
+            from services.notification_service import AdminNotificationService
+            
+            if recipient_type == 'specific' and user_ids:
+                # Send to specific users
+                count = 0
+                for user_id in user_ids:
+                    notification = AdminNotificationService.send_to_user(
+                        admin_user_id=current_user.id,
+                        target_user_id=int(user_id),
+                        title=title,
+                        message=message,
+                        priority=priority
+                    )
+                    if notification:
+                        count += 1
+            elif recipient_type == 'all':
+                # Send to all users
+                count = AdminNotificationService.send_to_all_users(
+                    admin_user_id=current_user.id,
+                    title=title,
+                    message=message,
+                    priority=priority
+                )
+            else:
+                return jsonify({'error': 'Invalid recipient type'}), 400
+            
+            # Log admin action
+            log_admin_action(
+                'send_notification',
+                f'Sent notification "{title}" to {count} users',
+                metadata={
+                    'title': title,
+                    'recipient_type': recipient_type,
+                    'recipients_count': count,
+                    'priority': priority
+                }
+            )
+            
+            return jsonify({
+                'success': True,
+                'message': f'Notification sent to {count} users',
+                'count': count
+            })
+            
+        except Exception as e:
+            current_app.logger.error(f"Error sending notification: {e}")
+            return jsonify({'error': 'Failed to send notification'}), 500
+    
+    # GET request - show send form
+    users = User.query.filter_by(is_active=True).order_by(User.username).all()
+    return render_template('admin/send_notification.html', users=users)
+
+
+@admin_bp.route('/notifications/<int:notification_id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def delete_notification(notification_id):
+    """Delete a specific notification"""
+    try:
+        notification = Notification.query.get_or_404(notification_id)
+        
+        # Log before deletion
+        log_admin_action(
+            'delete_notification',
+            f'Deleted notification "{notification.title}" for user {notification.user_id}',
+            user_id=notification.user_id,
+            metadata={
+                'notification_id': notification_id,
+                'title': notification.title,
+                'type': notification.notification_type
+            }
+        )
+        
+        db.session.delete(notification)
+        db.session.commit()
+        
+        return jsonify({'message': 'Notification deleted successfully'})
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error deleting notification: {e}")
+        return jsonify({'error': 'Failed to delete notification'}), 500
+
+
+@admin_bp.route('/notifications/cleanup', methods=['POST'])
+@login_required
+@admin_required
+def cleanup_notifications():
+    """Clean up old/expired notifications"""
+    try:
+        from services.notification_service import NotificationService
+        
+        # Clean up expired notifications
+        expired_count = NotificationService.cleanup_expired_notifications()
+        
+        # Optionally clean up old read notifications (older than 30 days)
+        cutoff_date = datetime.utcnow() - timedelta(days=30)
+        old_notifications = Notification.query.filter(
+            and_(
+                Notification.is_read == True,
+                Notification.created_at < cutoff_date
+            )
+        ).all()
+        
+        old_count = len(old_notifications)
+        for notification in old_notifications:
+            db.session.delete(notification)
+        
+        db.session.commit()
+        
+        total_cleaned = expired_count + old_count
+        
+        log_admin_action(
+            'cleanup_notifications',
+            f'Cleaned up {total_cleaned} notifications ({expired_count} expired, {old_count} old read)',
+            metadata={
+                'expired_count': expired_count,
+                'old_count': old_count,
+                'total_cleaned': total_cleaned
+            }
+        )
+        
+        return jsonify({
+            'message': f'Cleaned up {total_cleaned} notifications',
+            'expired_count': expired_count,
+            'old_count': old_count
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error cleaning up notifications: {e}")
+        return jsonify({'error': 'Failed to clean up notifications'}), 500
+
+
+@admin_bp.route('/notification-templates')
+@login_required
+@admin_required
+def notification_templates():
+    """Manage notification templates"""
+    templates = NotificationTemplate.query.order_by(NotificationTemplate.name).all()
+    return render_template('admin/notification_templates.html', templates=templates)
+
+
+@admin_bp.route('/notification-templates/create', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def create_notification_template():
+    """Create new notification template"""
+    if request.method == 'POST':
+        try:
+            data = request.get_json() or request.form
+            
+            name = data.get('name', '').strip()
+            title_template = data.get('title_template', '').strip()
+            message_template = data.get('message_template', '').strip()
+            notification_type = data.get('notification_type', 'system')
+            category = data.get('category', 'admin_message')
+            priority = data.get('priority', 'normal')
+            
+            if not name or not title_template or not message_template:
+                return jsonify({'error': 'Name, title template, and message template are required'}), 400
+            
+            # Check for duplicate names
+            existing = NotificationTemplate.query.filter_by(name=name).first()
+            if existing:
+                return jsonify({'error': 'Template name already exists'}), 400
+            
+            template = NotificationTemplate(
+                name=name,
+                title_template=title_template,
+                message_template=message_template,
+                notification_type=notification_type,
+                category=category,
+                priority=priority,
+                is_system_template=True,
+                created_by=current_user.id
+            )
+            
+            db.session.add(template)
+            db.session.commit()
+            
+            log_admin_action(
+                'create_notification_template',
+                f'Created notification template "{name}"',
+                metadata={
+                    'template_name': name,
+                    'type': notification_type,
+                    'category': category
+                }
+            )
+            
+            return jsonify({
+                'message': 'Template created successfully',
+                'template_id': template.id
+            })
+            
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error creating notification template: {e}")
+            return jsonify({'error': 'Failed to create template'}), 500
+    
+    return render_template('admin/create_notification_template.html')
+
+
+@admin_bp.route('/api/notifications/stats')
+@login_required
+@admin_required
+def notification_stats_api():
+    """API endpoint for notification statistics"""
+    try:
+        stats = {
+            'total_notifications': Notification.query.count(),
+            'unread_count': Notification.query.filter_by(is_read=False).count(),
+            'today_count': Notification.query.filter(
+                Notification.created_at >= datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+            ).count(),
+            'by_type': {},
+            'by_priority': {}
+        }
+        
+        # Count by type
+        type_counts = db.session.query(
+            Notification.notification_type,
+            func.count(Notification.id)
+        ).group_by(Notification.notification_type).all()
+        
+        for type_name, count in type_counts:
+            stats['by_type'][type_name] = count
+        
+        # Count by priority
+        priority_counts = db.session.query(
+            Notification.priority,
+            func.count(Notification.id)
+        ).group_by(Notification.priority).all()
+        
+        for priority_name, count in priority_counts:
+            stats['by_priority'][priority_name] = count
+        
+        return jsonify(stats)
+        
+    except Exception as e:
+        current_app.logger.error(f"Error getting notification stats: {e}")
+        return jsonify({'error': 'Failed to get notification stats'}), 500
+
+
