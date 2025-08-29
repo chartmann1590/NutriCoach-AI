@@ -18,11 +18,13 @@
 - [Photo Upload](screenshots/registration/reg_13_photo_upload.png)
 
 ### 🤖 AI Nutrition Coach
-- **Local AI Processing**: Privacy-focused coaching with Ollama
-- **Personalized Guidance**: Context-aware nutrition advice
-- **Real-Time Chat**: Streaming responses for natural conversation
-- **Goal-Based Recommendations**: Advice aligned with user objectives
-- **Safety Features**: Medical disclaimer integration and boundaries
+- **Local AI Processing**: Privacy-focused coaching with Ollama integration
+- **Default System Prompts**: Automatic coaching guidance assignment for all users
+- **Customizable Prompts**: Personalize AI coaching style while preserving user customizations
+- **Personalized Guidance**: Context-aware nutrition advice based on user profile and goals
+- **Real-Time Chat**: Streaming responses via Server-Sent Events for natural conversation
+- **Goal-Based Recommendations**: Advice aligned with user objectives and dietary restrictions
+- **Safety Features**: Medical disclaimer integration and professional consultation recommendations
 
 **Screenshots**:
 - [AI Coach Interface](screenshots/registration/reg_14_ai_coach.png)
@@ -140,6 +142,41 @@
 
 **Screenshots**:
 - [Homepage](screenshots/registration/reg_01_homepage.png)
+
+---
+
+## 📱 Mobile Application (Flutter)
+
+### Cross-Platform Support
+- **Android**: Native Android app with Material Design 3
+- **iOS**: Native iOS app with platform-specific adaptations
+- **Web**: Progressive Web App (PWA) deployment
+- **Windows**: Desktop application for Windows 10/11
+- **macOS**: Native macOS desktop application
+- **Linux**: Desktop support for Linux distributions
+
+### Mobile-Specific Features
+- **📷 Photo Food Analysis**: Camera integration with AI-powered food recognition
+- **🏠 Mobile Dashboard**: Touch-optimized nutrition overview with quick actions
+- **🔍 Real-Time Search**: Instant food database search with autocomplete
+- **📝 Mobile Food Entry**: Streamlined food logging with mobile-friendly forms
+- **⚙️ Server Configuration**: Flexible API endpoint setup for any deployment scenario
+- **🎨 Material Design 3**: Modern UI with confidence indicators and smooth animations
+- **🔄 Real-Time Sync**: Instant synchronization with web application data
+
+### Mobile Configuration Options
+- **Development Mode**: `http://localhost:5001`
+- **Android Emulator**: `http://10.0.2.2:5001`
+- **Physical Device**: Custom LAN IP configuration
+- **Production**: HTTPS endpoint support with SSL certificate validation
+
+### Mobile Development Workflow
+- **Flutter SDK Integration**: Complete development environment setup
+- **Hot Reload**: Instant UI updates during development
+- **Platform Testing**: Automated testing across all supported platforms
+- **Build Automation**: APK, IPA, and web builds with CI/CD integration
+
+**Mobile Documentation**: See `docs/mobile_app.md` for comprehensive setup and development guide.
 
 ---
 

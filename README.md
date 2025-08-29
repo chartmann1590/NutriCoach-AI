@@ -5,30 +5,43 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](Dockerfile)
 
-**NutriCoach** is a complete, production-ready AI-powered nutrition tracking web application built with Flask. It combines intelligent food recognition, personalized AI coaching, and comprehensive nutrition analytics to help users achieve their health goals.
+**NutriCoach** is a complete, production-ready AI-powered nutrition tracking web application built with Flask. It combines intelligent food recognition, personalized AI coaching, and comprehensive nutrition analytics with a privacy-first approach. The application features local AI processing via Ollama, comprehensive nutrition tracking, and a companion Flutter mobile app for cross-platform access.
 
 ## ✨ Features
 
 ### 🤖 **AI-Powered Intelligence**
-- **AI Nutrition Coach**: Get personalized advice powered by Ollama LLMs
+- **AI Nutrition Coach**: Get personalized advice powered by local Ollama LLMs with default coaching prompts
 - **Photo Food Recognition**: Upload food photos for automatic identification and nutrition analysis
 - **Smart Meal Suggestions**: Context-aware food recommendations based on your goals and preferences
+- **Streaming Chat Interface**: Real-time AI responses using Server-Sent Events
+- **Customizable System Prompts**: Personalize AI coaching style while preserving user customizations
 
 ### 📊 **Comprehensive Tracking**
-- **Multi-Modal Food Logging**: Manual entry, photo upload, or barcode scanning
-- **Progress Analytics**: Detailed charts and insights into your nutrition trends
+- **Multi-Modal Food Logging**: Manual entry, photo upload, or barcode scanning (mobile)
+- **Progress Analytics**: Detailed charts and insights into your nutrition trends with export capabilities
 - **Goal-Based Targets**: Personalized calorie and macro targets based on your profile
+- **Micronutrient Tracking**: Complete nutrition profiling with JSON-based micronutrient storage
+- **Meal Categorization**: Organized tracking by breakfast, lunch, dinner, and snacks
 
 ### 🔒 **Privacy-First Design**
-- **Local AI Processing**: Use your own Ollama instance for complete data privacy
-- **Secure Authentication**: BCrypt password hashing and CSRF protection
+- **Local AI Processing**: Use your own Ollama instance for complete data privacy - no external AI calls
+- **Secure Authentication**: BCrypt password hashing, CSRF protection, and session-based login
+- **Role-Based Access Control**: Admin functionality with proper authorization decorators
 - **Offline Capability**: Works without external API calls when needed
+- **Secure File Handling**: Type validation, size limits, and secure filename handling
 
 ### 🎨 **Modern User Experience**
-- **Responsive Design**: Mobile-first design that works on all devices
-- **Dark Mode**: Built-in dark/light theme switching
-- **Real-time Updates**: HTMX-powered dynamic interface
-- **Accessibility**: WCAG AA compliant with proper ARIA labels
+- **Responsive Design**: Mobile-first Bootstrap design that works on all devices
+- **Cross-Platform Mobile App**: Flutter companion app for Android, iOS, Web, and Windows
+- **Admin Dashboard**: Comprehensive user management and system monitoring tools
+- **4-Step Onboarding**: Guided setup for profile, goals, lifestyle, and AI configuration
+- **Interactive API Documentation**: Swagger UI with complete API specification
+
+### 📱 **Mobile Application**
+- **Flutter Cross-Platform**: Native mobile experience on Android, iOS, Web, and Windows
+- **Photo Food Analysis**: Camera integration with AI-powered food recognition
+- **Server Configuration**: Flexible API endpoint configuration for different deployments
+- **Material Design 3**: Modern UI components with confidence indicators and smooth animations
 
 ## 🚀 Quick Start
 
@@ -152,54 +165,133 @@ LOG_LEVEL=INFO
 - **Trends**: Weight, nutrition, and habit tracking over time
 - **Export**: Download your data as CSV
 
+## 🔧 Technology Stack
+
+### Backend Framework & Extensions
+- **Flask 3.0.0**: Modern Python web framework with application factory pattern
+- **SQLAlchemy 2.0.23**: Advanced ORM with modern async support and type hints
+- **Flask-Login 0.6.3**: Session-based authentication and user management
+- **Flask-WTF 1.2.1**: Form handling and comprehensive CSRF protection
+- **Flask-Session**: Redis-backed session storage for scalability
+- **APScheduler 3.10.4**: Background task scheduling and maintenance jobs
+
+### Database & Storage
+- **PostgreSQL**: Production database with full-text search capabilities
+- **SQLite**: Development database with seamless migration path
+- **Redis 5.0.1**: Session storage, caching, and real-time features
+- **File Upload Security**: Secure handling with type validation and size limits
+
+### AI & Machine Learning
+- **Ollama Integration**: Local LLM serving for privacy-first AI features
+- **Computer Vision**: PIL/Pillow for advanced image processing
+- **Barcode Recognition**: pyzbar for product identification
+- **Natural Language Processing**: Custom food parsing and nutrition extraction
+
+### External APIs & Integrations  
+- **Open Food Facts API**: Global nutrition database with 2M+ products
+- **Wikipedia API**: Supplementary food information and nutritional data
+- **RESTful Architecture**: Well-documented API with OpenAPI 3.0 specification
+
+### Frontend & UI Technologies
+- **Jinja2 Templates**: Server-side rendering with component-based structure
+- **Bootstrap 5**: Responsive CSS framework with custom themes
+- **JavaScript/AJAX**: Dynamic interactions and real-time updates
+- **Server-Sent Events**: Streaming AI chat responses
+- **Chart.js**: Interactive data visualization and progress tracking
+
+### Mobile Development
+- **Flutter**: Cross-platform mobile framework (Android, iOS, Web, Windows)
+- **Dart**: Modern programming language with null safety
+- **Material Design 3**: Native UI components and smooth animations
+- **Camera Integration**: Photo capture with permission handling
+- **HTTP Client**: Secure API communication with the Flask backend
+
+### Testing & Quality Assurance
+- **Pytest 7.4.3**: Comprehensive unit testing framework with fixtures
+- **Playwright 1.40.0**: End-to-end browser automation and testing
+- **Coverage Reports**: HTML coverage reporting with threshold enforcement
+- **Code Quality**: Black formatting, isort imports, flake8 linting
+- **Pre-commit Hooks**: Automated code quality enforcement
+
+### DevOps & Deployment
+- **Docker**: Production-ready containerization with health checks
+- **Docker Compose**: Multi-container orchestration (app, database, Redis)
+- **Environment Management**: Comprehensive .env configuration support
+- **Health Monitoring**: Container health checks and graceful shutdowns
+- **Makefile**: Streamlined development workflow commands
+
+### Security Features
+- **BCrypt Password Hashing**: Industry-standard password protection with salt rounds
+- **CSRF Protection**: Comprehensive token-based protection on all forms
+- **Session Security**: HTTPOnly cookies with secure Redis backing
+- **Role-Based Access Control**: Admin functionality with proper authorization
+- **Input Validation**: WTForms validation with custom security rules
+- **SQL Injection Prevention**: SQLAlchemy ORM with parameterized queries
+
 ## 🛠 Development
 
 ### Project Structure
 
 ```
 nutrition-ai/
-├── app.py                 # Flask application factory
-├── config.py             # Configuration classes
-├── extensions.py         # Flask extensions initialization
-├── models.py             # SQLAlchemy database models
-├── forms/                # WTForms form definitions
-├── routes/               # Flask blueprints and routes
-├── api/                  # API endpoints
-├── services/             # Business logic and external integrations
-├── templates/            # Jinja2 HTML templates
-├── static/               # CSS, JS, images, uploads
-├── tests/                # Unit and integration tests
-│   ├── unit/            # Unit tests
-│   └── e2e/             # End-to-end Playwright tests
-├── docker-compose.yml    # Docker setup
-├── Dockerfile           # Container definition
-└── requirements.txt      # Python dependencies
+├── app.py                    # Flask application factory with scheduler
+├── config.py                # Environment-based configuration classes
+├── extensions.py            # Flask extensions initialization
+├── constants.py             # Application constants (NEW)
+├── models.py                # SQLAlchemy database models (11 models)
+├── forms/                   # WTForms form definitions by feature
+├── routes/                  # Flask blueprints (6 main blueprints)
+│   ├── auth.py             # Authentication with default prompts
+│   ├── main.py             # Dashboard and core features
+│   ├── onboarding.py       # 4-step user setup wizard
+│   ├── settings.py         # User preferences and AI config
+│   ├── coach.py            # AI chat with streaming responses
+│   └── admin.py            # Administrative functionality
+├── api/                     # RESTful API endpoints
+├── services/                # Business logic and external integrations
+├── templates/               # Jinja2 HTML templates with Bootstrap
+├── static/                  # CSS, JS, images, uploads
+├── scripts/                 # Utility scripts including admin tools
+├── nutrition_ai_mobile/     # Flutter mobile companion app
+├── tests/                   # Comprehensive testing suite
+│   ├── unit/               # Unit tests for models and services
+│   ├── e2e/                # End-to-end Playwright tests
+│   └── integration/        # Integration tests
+├── docs/                    # Extensive documentation and guides
+├── docker-compose.yml       # Production Docker setup
+├── Dockerfile              # Multi-stage container build
+└── requirements.txt         # Python dependencies
 ```
 
 ### Key Components
 
-#### Models (`models.py`)
-- **User**: Authentication and user management
-- **Profile**: User preferences, goals, and lifestyle data
-- **Settings**: AI and application configuration
-- **FoodLog**: Nutrition logging entries
-- **FoodItem**: Food database cache
-- **CoachMessage**: AI chat history
-- **WeighIn/WaterIntake**: Health tracking data
+#### Database Models (`models.py`) - 11 Core Models
+- **User**: Authentication with admin flags and cascading relationships
+- **Profile**: User preferences, goals, and lifestyle data stored as JSON fields
+- **Settings**: AI configuration with default system prompts and Ollama settings
+- **FoodLog**: Comprehensive nutrition logging with macro/micronutrient tracking
+- **FoodItem**: Cached food database entries from external APIs with source tracking
+- **CoachMessage**: AI chat history with role-based storage and source references
+- **Photo**: Food image uploads with AI analysis results and metadata
+- **WeighIn/WaterIntake**: Health tracking data with progress monitoring
+- **SystemLog/GlobalSettings**: Admin and system management capabilities
 
-#### Services (`services/`)
-- **OllamaClient**: Interface to Ollama AI models
-- **NutritionSearch**: Open Food Facts and Wikipedia integration
-- **FoodParser**: Food recognition and nutrition parsing
-- **RecommendationService**: Personalized suggestions and targets
-- **AnalyticsService**: Progress tracking and data analysis
+#### Service Layer (`services/`) - Clean Architecture
+- **OllamaClient**: Intelligent Ollama interface with Docker auto-correction and user-specific settings
+- **NutritionSearch**: Open Food Facts API and Wikipedia integration with caching
+- **FoodParser**: AI-powered food recognition from photos with confidence scoring
+- **RecommendationService**: Personalized meal suggestions and calorie targets
+- **AnalyticsService**: Progress tracking, trend analysis, and data visualization
+- **VisionClassifier**: Advanced image processing for food recognition
 
-#### API Endpoints (`api/routes.py`)
-- `/api/logs` - Food logging CRUD operations
-- `/api/coach/chat` - AI chat streaming
-- `/api/photo/upload` - Image upload and analysis
-- `/api/analytics/*` - Progress data and charts
-- `/api/models/*` - Ollama model management
+#### RESTful API (`api/routes.py`) - Complete Coverage
+- `/api/logs` - CRUD operations for food logging with filtering
+- `/api/coach/chat` - Streaming AI chat responses via Server-Sent Events
+- `/api/photo/upload` - Secure image upload and AI analysis pipeline
+- `/api/analytics/*` - Progress data, charts, and trend analysis endpoints
+- `/api/models/*` - Ollama model management and health checking
+- `/api/export/*` - Data export capabilities (CSV, JSON)
+- `/api/healthz` - Container health monitoring endpoint
 
 ### Running Tests
 
@@ -462,37 +554,80 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🗺 Roadmap
 
 ### Upcoming Features
+- [ ] Advanced offline mode for mobile app
 - [ ] Meal planning and grocery lists
-- [ ] Nutrition goal templates
-- [ ] Recipe import and scaling
-- [ ] Social features and sharing
-- [ ] Mobile app (React Native)
-- [ ] Advanced ML models for food recognition
-- [ ] Integration with fitness trackers
-- [ ] Nutritionist collaboration features
+- [ ] Nutrition goal templates and challenges
+- [ ] Recipe import, scaling, and meal prep
+- [ ] Social features and progress sharing
+- [ ] Enhanced ML models for food recognition
+- [ ] Integration with fitness trackers and wearables
+- [ ] Nutritionist collaboration and consultation features
+- [ ] Voice-to-text food logging
+- [ ] Batch photo processing for meal prep
 
-### Version History
+### Recent Updates & Version History
 
-- **v1.0.0**: Initial release with core features
-  - User authentication and onboarding
-  - Food logging (manual, photo, barcode)
-  - AI coach integration
-  - Progress tracking and analytics
-  - Docker deployment ready
+#### **v1.2.0**: Enhanced AI & Mobile Features
+- ✅ **Default System Prompts**: Automatic coaching prompt assignment for all users
+- ✅ **Flutter Mobile App**: Complete cross-platform mobile companion
+- ✅ **Photo Food Analysis**: Camera integration with AI-powered recognition
+- ✅ **Enhanced Security**: Comprehensive CSRF protection and admin controls
+- ✅ **Streaming Chat**: Real-time AI responses with Server-Sent Events
+- ✅ **Docker Optimization**: Production-ready containerization with health monitoring
+
+#### **v1.0.0**: Initial Release
+- ✅ User authentication and 4-step onboarding
+- ✅ Multi-modal food logging (manual, photo, barcode)
+- ✅ AI coach integration with Ollama
+- ✅ Progress tracking and analytics dashboard
+- ✅ Admin functionality with user management
+- ✅ RESTful API with interactive documentation
 
 ---
 
-**Built with ❤️ for better nutrition tracking**
+**Built with ❤️ for better nutrition tracking and privacy-first AI**
 
 ## 📱 Mobile App (Flutter)
 
-A companion Flutter app is available in `nutrition_ai_mobile/`.
+### Cross-Platform Mobile Companion
+The Flutter mobile app provides a native mobile experience across all platforms:
 
-- Documentation: `docs/mobile_app.md`
-- Quick start:
-  ```bash
-  cd nutrition_ai_mobile
-  flutter pub get
-  flutter run -d android   # or ios / chrome / windows
-  ```
-- Configure the server URL in the app (e.g., `http://localhost:5001` or `http://10.0.2.2:5001` for Android emulator).
+```bash
+cd nutrition_ai_mobile
+flutter pub get
+flutter run -d android    # Android development
+flutter run -d ios        # iOS development  
+flutter run -d chrome     # Web deployment
+flutter run -d windows    # Windows desktop
+```
+
+### Mobile App Features
+- **🏠 Dashboard**: Nutrition overview with quick action buttons
+- **📷 Photo Logging**: Camera integration with AI food recognition
+- **🔍 Food Search**: Real-time search of nutrition database
+- **📝 Manual Entry**: Complete food logging with nutrition details
+- **⚙️ Server Setup**: Flexible backend configuration for any deployment
+- **🎨 Material Design 3**: Modern UI with confidence indicators and animations
+
+### Mobile Configuration
+Configure the API endpoint based on your deployment:
+- **Development**: `http://localhost:5001`
+- **Android Emulator**: `http://10.0.2.2:5001`
+- **Physical Device**: `http://YOUR-LAN-IP:5001` (e.g., `http://192.168.1.20:5001`)
+- **Production**: `https://your-domain.com`
+
+### Mobile Development Setup
+```bash
+# Install Flutter dependencies
+flutter doctor                    # Verify Flutter installation
+flutter pub get                  # Install package dependencies
+flutter pub upgrade              # Update to latest packages
+
+# Platform-specific setup
+flutter config --enable-web      # Enable web development
+flutter config --enable-windows  # Enable Windows desktop
+flutter config --enable-macos    # Enable macOS desktop
+flutter config --enable-linux    # Enable Linux desktop
+```
+
+For complete mobile app documentation, see `docs/mobile_app.md`.

@@ -11,14 +11,26 @@ This document covers the NutriCoach Flutter mobile app: features, installation, 
 
 ## Current Features
 
-- Authentication: Register and login.
-- Server Configuration: Set API base URL on first launch (or via Server Setup screen).
-- Dashboard: Overview and quick links.
-- Food Search: Query foods via server API.
-- Manual Food Entry: Create food logs (posts to `/api/logs`).
+### ✅ Implemented Features
+- **🔐 Authentication**: Complete user registration and login with secure session management
+- **⚙️ Server Configuration**: Flexible API base URL setup for any deployment scenario
+- **🏠 Dashboard**: Nutrition overview with quick action buttons and progress indicators
+- **🔍 Food Search**: Real-time food database search with autocomplete suggestions
+- **📝 Manual Food Entry**: Complete food logging with nutrition details and meal categorization
+- **📷 Photo Food Analysis**: Camera integration with AI-powered food recognition and confidence scoring
+- **🎨 Material Design 3**: Modern UI with smooth animations and responsive design
+- **🔄 Real-Time Sync**: Instant data synchronization with the web application
 
-Notes:
-- Photo logging and barcode scanning are not yet implemented; use manual entry and search.
+### 🚧 In Development
+- **📊 Progress Analytics**: Charts and trend visualization (web-only currently)
+- **🤖 AI Coach Chat**: Mobile-optimized chat interface with streaming responses
+- **📱 Offline Mode**: Local data storage and sync capabilities
+- **🔔 Push Notifications**: Meal reminders and progress notifications
+
+### 🎯 Planned Features
+- **Barcode Scanning**: Product identification via camera barcode scanning
+- **Meal Planning**: Mobile meal planning and grocery list integration
+- **Voice Input**: Voice-to-text food logging capabilities
 
 ## Prerequisites
 

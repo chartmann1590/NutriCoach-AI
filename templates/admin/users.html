@@ -11,7 +11,23 @@
             <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Users</h1>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Manage user accounts and permissions</p>
         </div>
-        <div class="mt-4 sm:mt-0">
+        <div class="mt-4 sm:mt-0 flex items-center space-x-3">
+            <!-- Registration Toggle -->
+            <div class="flex items-center">
+                <span class="text-sm text-gray-700 dark:text-gray-300 mr-3">User Registration:</span>
+                <button onclick="toggleRegistration()" 
+                        class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 {% if registration_enabled %}bg-indigo-600{% else %}bg-gray-200{% endif %}"
+                        id="registrationToggle">
+                    <span class="sr-only">Toggle user registration</span>
+                    <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {% if registration_enabled %}translate-x-5{% else %}translate-x-0{% endif %}"
+                          id="registrationToggleKnob"></span>
+                </button>
+                <span class="ml-2 text-sm {% if registration_enabled %}text-green-600{% else %}text-red-600{% endif %}" 
+                      id="registrationStatus">
+                    {% if registration_enabled %}Enabled{% else %}Disabled{% endif %}
+                </span>
+            </div>
+            
             <a href="{{ url_for('admin.create_user') }}" 
                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
                 <i class="fas fa-user-plus mr-2"></i>
@@ -53,7 +69,7 @@
     <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Bulk Actions</h3>
         <form method="POST" action="{{ url_for('admin.bulk_user_action') }}" class="space-y-4">
-            {{ csrf_token() }}
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" id="bulk-csrf-token">
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                     <label for="action" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Action</label>
@@ -183,17 +199,31 @@
                                     Never
                                 {% endif %}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                                <a href="{{ url_for('admin.edit_user', user_id=user.id) }}" 
-                                   class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                {% if user.id != current_user.id %}
-                                    <button onclick="deleteUser({{ user.id }}, '{{ user.username }}')" 
-                                            class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                {% endif %}
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <div class="flex items-center space-x-2">
+                                    <a href="{{ url_for('admin.edit_user', user_id=user.id) }}" 
+                                       class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
+                                       title="Edit User">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if user.id != current_user.id %}
+                                        <button onclick="resetPassword({{ user.id }}, '{{ user.username }}')" 
+                                                class="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300"
+                                                title="Reset Password">
+                                            <i class="fas fa-key"></i>
+                                        </button>
+                                        <button onclick="toggleStatus({{ user.id }}, '{{ user.username }}', {{ user.is_active|lower }})" 
+                                                class="{% if user.is_active %}text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300{% else %}text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300{% endif %}"
+                                                title="{% if user.is_active %}Deactivate{% else %}Activate{% endif %} User">
+                                            <i class="fas fa-{% if user.is_active %}pause{% else %}play{% endif %}"></i>
+                                        </button>
+                                        <button onclick="deleteUser({{ user.id }}, '{{ user.username }}')" 
+                                                class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                                                title="Delete User">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    {% endif %}
+                                </div>
                             </td>
                         </tr>
                     {% else %}
@@ -264,13 +294,97 @@
             </p>
             <div class="flex space-x-4">
                 <form id="deleteForm" method="POST" class="flex-1">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="csrf_token" id="delete-csrf-token">
                     <button type="submit" 
                             class="w-full px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
                         Delete User
                     </button>
                 </form>
                 <button onclick="closeDeleteModal()" 
+                        class="flex-1 px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-400 dark:hover:bg-gray-500">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reset Password Confirmation Modal -->
+<div id="resetPasswordModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Reset Password</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                Are you sure you want to reset the password for <span id="resetUsername" class="font-medium"></span>? 
+                A new random password will be generated and displayed securely.
+            </p>
+            <div class="flex space-x-4">
+                <button id="confirmResetButton" 
+                        class="flex-1 px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700">
+                    Reset Password
+                </button>
+                <button onclick="closeResetPasswordModal()" 
+                        class="flex-1 px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-400 dark:hover:bg-gray-500">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Password Display Modal -->
+<div id="passwordDisplayModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">New Password Generated</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Password has been reset for <span id="passwordDisplayUsername" class="font-medium"></span>.
+            </p>
+            <div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 mb-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">New Password:</label>
+                <div class="flex items-center space-x-2">
+                    <input type="password" id="newPasswordDisplay" readonly 
+                           class="flex-1 px-3 py-2 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-md text-sm font-mono">
+                    <button onclick="togglePasswordVisibility()" 
+                            class="px-3 py-2 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded-md">
+                        <i id="passwordToggleIcon" class="fas fa-eye"></i>
+                    </button>
+                    <button onclick="copyPassword()" 
+                            class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mb-4">
+                <p class="text-sm text-yellow-800 dark:text-yellow-200">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    Please save this password securely. It cannot be recovered once this dialog is closed.
+                </p>
+            </div>
+            <button onclick="closePasswordDisplayModal()" 
+                    class="w-full px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Toggle Status Modal -->
+<div id="toggleStatusModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4" id="toggleStatusTitle">Toggle Status</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-6" id="toggleStatusMessage">
+            </p>
+            <div class="flex space-x-4">
+                <form id="toggleStatusForm" method="POST" class="flex-1">
+                    <input type="hidden" name="csrf_token" id="toggle-csrf-token">
+                    <button type="submit" id="toggleStatusButton"
+                            class="w-full px-4 py-2 text-white rounded-md">
+                        Confirm
+                    </button>
+                </form>
+                <button onclick="closeToggleStatusModal()" 
                         class="flex-1 px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-400 dark:hover:bg-gray-500">
                     Cancel
                 </button>
@@ -289,5 +403,195 @@ function deleteUser(userId, username) {
 function closeDeleteModal() {
     document.getElementById('deleteModal').classList.add('hidden');
 }
+
+let currentResetUserId = null;
+
+function resetPassword(userId, username) {
+    currentResetUserId = userId;
+    document.getElementById('resetUsername').textContent = username;
+    document.getElementById('resetPasswordModal').classList.remove('hidden');
+}
+
+function closeResetPasswordModal() {
+    document.getElementById('resetPasswordModal').classList.add('hidden');
+    currentResetUserId = null;
+}
+
+function closePasswordDisplayModal() {
+    document.getElementById('passwordDisplayModal').classList.add('hidden');
+    // Clear the password from memory
+    document.getElementById('newPasswordDisplay').value = '';
+}
+
+function togglePasswordVisibility() {
+    const passwordField = document.getElementById('newPasswordDisplay');
+    const toggleIcon = document.getElementById('passwordToggleIcon');
+    
+    if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        toggleIcon.className = 'fas fa-eye-slash';
+    } else {
+        passwordField.type = 'password';
+        toggleIcon.className = 'fas fa-eye';
+    }
+}
+
+function copyPassword() {
+    const passwordField = document.getElementById('newPasswordDisplay');
+    passwordField.select();
+    passwordField.setSelectionRange(0, 99999); // For mobile devices
+    
+    navigator.clipboard.writeText(passwordField.value).then(function() {
+        // Show temporary feedback
+        const button = event.target.closest('button');
+        const originalIcon = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check"></i>';
+        setTimeout(() => {
+            button.innerHTML = originalIcon;
+        }, 2000);
+    }).catch(function() {
+        // Fallback for older browsers
+        document.execCommand('copy');
+    });
+}
+
+// Handle the confirm reset button
+document.getElementById('confirmResetButton').addEventListener('click', function() {
+    if (!currentResetUserId) return;
+    
+    // Show loading state
+    this.disabled = true;
+    this.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Resetting...';
+    
+    fetch(`/admin/users/${currentResetUserId}/reset-password`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.getElementById('master-csrf-token').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Reset button state
+        this.disabled = false;
+        this.innerHTML = 'Reset Password';
+        
+        if (data.success) {
+            // Close confirmation modal
+            closeResetPasswordModal();
+            
+            // Show password in secure modal
+            document.getElementById('passwordDisplayUsername').textContent = data.username;
+            document.getElementById('newPasswordDisplay').value = data.new_password;
+            document.getElementById('passwordDisplayModal').classList.remove('hidden');
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        // Reset button state
+        this.disabled = false;
+        this.innerHTML = 'Reset Password';
+        alert('Error resetting password. Please try again.');
+        console.error('Error:', error);
+    });
+});
+
+function toggleStatus(userId, username, isActive) {
+    const action = isActive ? 'deactivate' : 'activate';
+    const actionText = isActive ? 'Deactivate' : 'Activate';
+    const buttonColor = isActive ? 'bg-orange-600 hover:bg-orange-700' : 'bg-green-600 hover:bg-green-700';
+    
+    document.getElementById('toggleStatusTitle').textContent = `${actionText} User`;
+    document.getElementById('toggleStatusMessage').innerHTML = 
+        `Are you sure you want to ${action} user <span class="font-medium">${username}</span>?`;
+    
+    const button = document.getElementById('toggleStatusButton');
+    button.textContent = actionText;
+    button.className = `w-full px-4 py-2 text-white rounded-md ${buttonColor}`;
+    
+    document.getElementById('toggleStatusForm').action = `/admin/users/${userId}/toggle-status`;
+    document.getElementById('toggleStatusModal').classList.remove('hidden');
+}
+
+function closeToggleStatusModal() {
+    document.getElementById('toggleStatusModal').classList.add('hidden');
+}
+
+function toggleRegistration() {
+    const toggle = document.getElementById('registrationToggle');
+    const knob = document.getElementById('registrationToggleKnob');
+    const status = document.getElementById('registrationStatus');
+    
+    // Show loading state
+    toggle.disabled = true;
+    toggle.classList.add('opacity-50');
+    
+    fetch('/admin/users/toggle-registration', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.getElementById('master-csrf-token').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Reset loading state
+        toggle.disabled = false;
+        toggle.classList.remove('opacity-50');
+        
+        if (data.success) {
+            // Update UI based on new state
+            if (data.enabled) {
+                toggle.classList.remove('bg-gray-200');
+                toggle.classList.add('bg-indigo-600');
+                knob.classList.remove('translate-x-0');
+                knob.classList.add('translate-x-5');
+                status.textContent = 'Enabled';
+                status.classList.remove('text-red-600');
+                status.classList.add('text-green-600');
+            } else {
+                toggle.classList.remove('bg-indigo-600');
+                toggle.classList.add('bg-gray-200');
+                knob.classList.remove('translate-x-5');
+                knob.classList.add('translate-x-0');
+                status.textContent = 'Disabled';
+                status.classList.remove('text-green-600');
+                status.classList.add('text-red-600');
+            }
+            
+            // Show temporary success message
+            const originalStatus = status.textContent;
+            status.textContent = '✓ Updated';
+            setTimeout(() => {
+                status.textContent = originalStatus;
+            }, 2000);
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        // Reset loading state
+        toggle.disabled = false;
+        toggle.classList.remove('opacity-50');
+        alert('Error toggling registration. Please try again.');
+        console.error('Error:', error);
+    });
+}
+
+// Initialize CSRF tokens for forms
+document.addEventListener('DOMContentLoaded', function() {
+    const csrfToken = document.getElementById('bulk-csrf-token').value;
+    
+    // Set CSRF tokens for modal forms
+    document.getElementById('delete-csrf-token').value = csrfToken;
+    document.getElementById('toggle-csrf-token').value = csrfToken;
+});
 </script>
+
+<!-- Hidden CSRF token for JavaScript -->
+<div style="display: none;">
+    <input type="hidden" id="master-csrf-token" value="{{ csrf_token() }}">
+</div>
+
 {% endblock %}

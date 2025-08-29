@@ -3,6 +3,8 @@ import '../services/api_service.dart';
 import '../models/food_item.dart';
 import 'food_detail_screen.dart';
 import 'manual_food_entry_screen.dart';
+import 'photo_food_screen.dart';
+import '../widgets/expandable_fab.dart';
 
 class FoodSearchScreen extends StatefulWidget {
   const FoodSearchScreen({Key? key}) : super(key: key);
@@ -388,17 +390,34 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => const ManualFoodEntryScreen(),
-            ),
-          );
-        },
-        backgroundColor: Colors.blue.shade600,
-        icon: const Icon(Icons.edit, color: Colors.white),
-        label: const Text('Manual Entry', style: TextStyle(color: Colors.white)),
+      floatingActionButton: ExpandableFab(
+        distance: 60,
+        children: [
+          ActionButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const PhotoFoodScreen(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.camera_alt),
+            color: Colors.purple.shade600,
+            tooltip: 'Photo Analysis',
+          ),
+          ActionButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const ManualFoodEntryScreen(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.edit),
+            color: Colors.blue.shade600,
+            tooltip: 'Manual Entry',
+          ),
+        ],
       ),
     );
   }

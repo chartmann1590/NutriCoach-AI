@@ -14,23 +14,42 @@ class FoodParser:
         candidates = []
         
         for item in vision_items:
-            # Extract portion size
-            portion_grams = self._parse_portion(item.get('portion', '100g'))
-            
+            # Normalize fields from various possible shapes
+            raw_name = item.get('name') or item.get('label') or item.get('food')
+            if not raw_name:
+                # Skip invalid entries lacking a name
+                continue
+
+            # Extract portion size (prefer numeric portion_grams if provided)
+            if 'portion_grams' in item and isinstance(item['portion_grams'], (int, float)):
+                portion_grams = float(item['portion_grams'])
+            else:
+                portion_grams = self._parse_portion(item.get('portion', '100g'))
+
+            # Normalize confidence to 0..1 float if present
+            confidence = item.get('confidence', 0.7)
+            try:
+                confidence = float(confidence)
+                if confidence > 1:
+                    confidence = confidence / 100.0
+                confidence = max(0.0, min(1.0, confidence))
+            except Exception:
+                confidence = 0.7
+
             # Search for nutrition data
-            nutrition_results = self.nutrition_search.search_food(item['name'])
-            
+            nutrition_results = self.nutrition_search.search_food(raw_name)
+
             # Get nutrition estimate
-            nutrition = self.nutrition_search.get_nutrition_estimate(item['name'], portion_grams)
-            
+            nutrition = self.nutrition_search.get_nutrition_estimate(raw_name, portion_grams)
+
             candidate = {
-                'name': item['name'],
+                'name': raw_name,
                 'portion_grams': portion_grams,
-                'confidence': item.get('confidence', 0.7),
+                'confidence': confidence,
                 'nutrition': nutrition,
                 'search_results': nutrition_results[:3]  # Top 3 search results
             }
-            
+
             candidates.append(candidate)
         
         return candidates

@@ -13,62 +13,96 @@ class OllamaClient:
     
     @classmethod
     def from_user_settings(cls, user_id: int = None):
-        """Create OllamaClient using the user's saved settings"""
+        """Create OllamaClient using the user's saved settings, fallback to admin settings"""
         try:
             if user_id is None and current_user and current_user.is_authenticated:
                 user_id = current_user.id
             
+            from models import Settings, User
+            
+            # Try to get current user's settings first
             if user_id:
-                from models import Settings
                 settings = Settings.query.filter_by(user_id=user_id).first()
                 if settings and settings.ollama_url:
-                    return cls(settings.ollama_url)
+                    ollama_url = settings.ollama_url
+                    # Only auto-correct localhost URLs in Docker environment
+                    if ollama_url == 'http://localhost:11434' and current_app.config.get('FLASK_ENV') == 'production':
+                        ollama_url = 'http://host.docker.internal:11434'
+                        current_app.logger.info(f"Auto-correcting localhost to host.docker.internal for Docker environment")
+                    return cls(ollama_url)
             
-            # Fallback to config default
-            return cls(current_app.config.get('OLLAMA_URL', 'http://localhost:11434'))
+            # Fallback to admin user settings
+            admin_user = User.query.filter_by(is_admin=True).first()
+            if admin_user:
+                admin_settings = Settings.query.filter_by(user_id=admin_user.id).first()
+                if admin_settings and admin_settings.ollama_url:
+                    ollama_url = admin_settings.ollama_url
+                    # Only auto-correct localhost URLs in Docker environment
+                    if ollama_url == 'http://localhost:11434' and current_app.config.get('FLASK_ENV') == 'production':
+                        ollama_url = 'http://host.docker.internal:11434'
+                        current_app.logger.info(f"Using admin settings with auto-corrected URL for Docker environment")
+                    return cls(ollama_url)
+            
+            # Final fallback to config default
+            default_url = current_app.config.get('OLLAMA_URL', 'http://host.docker.internal:11434')
+            return cls(default_url)
         except Exception:
-            # Fallback if anything goes wrong
-            return cls(current_app.config.get('OLLAMA_URL', 'http://localhost:11434'))
+            # Final fallback if anything goes wrong
+            default_url = current_app.config.get('OLLAMA_URL', 'http://host.docker.internal:11434')
+            return cls(default_url)
     
     @staticmethod
     def get_user_models(user_id: int = None):
-        """Get user's saved chat and vision models"""
+        """Get user's saved chat and vision models, fallback to admin settings"""
         try:
             if user_id is None and current_user and current_user.is_authenticated:
                 user_id = current_user.id
             
+            from models import Settings, User
+            
+            # Try to get current user's settings first
             if user_id:
-                from models import Settings
                 settings = Settings.query.filter_by(user_id=user_id).first()
-                if settings:
+                if settings and (settings.chat_model or settings.vision_model):
                     return {
-                        'chat_model': settings.chat_model or current_app.config.get('DEFAULT_CHAT_MODEL', 'llama2'),
-                        'vision_model': settings.vision_model or current_app.config.get('DEFAULT_VISION_MODEL', 'llava'),
+                        'chat_model': settings.chat_model,
+                        'vision_model': settings.vision_model,
                         'system_prompt': settings.system_prompt
                     }
             
-            # Fallback to config defaults
+            # Fallback to admin user settings
+            admin_user = User.query.filter_by(is_admin=True).first()
+            if admin_user:
+                admin_settings = Settings.query.filter_by(user_id=admin_user.id).first()
+                if admin_settings:
+                    return {
+                        'chat_model': admin_settings.chat_model or current_app.config.get('DEFAULT_CHAT_MODEL', 'llama2'),
+                        'vision_model': admin_settings.vision_model or current_app.config.get('DEFAULT_VISION_MODEL', 'llava'),
+                        'system_prompt': admin_settings.system_prompt
+                    }
+            
+            # Final fallback to config defaults
             return {
                 'chat_model': current_app.config.get('DEFAULT_CHAT_MODEL', 'llama2'),
                 'vision_model': current_app.config.get('DEFAULT_VISION_MODEL', 'llava'),
                 'system_prompt': None
             }
         except Exception:
-            # Fallback if anything goes wrong
+            # Final fallback if anything goes wrong
             return {
                 'chat_model': current_app.config.get('DEFAULT_CHAT_MODEL', 'llama2'),
                 'vision_model': current_app.config.get('DEFAULT_VISION_MODEL', 'llava'),
                 'system_prompt': None
             }
     
-    def _make_request(self, endpoint: str, method: str = 'GET', data: dict = None) -> requests.Response:
+    def _make_request(self, endpoint: str, method: str = 'GET', data: dict = None, timeout: int = 180) -> requests.Response:
         url = f"{self.base_url.rstrip('/')}/{endpoint.lstrip('/')}"
         
         if method == 'GET':
-            response = requests.get(url)
+            response = requests.get(url, timeout=timeout)
         elif method == 'POST':
             headers = {'Content-Type': 'application/json'}
-            response = requests.post(url, json=data, headers=headers)
+            response = requests.post(url, json=data, headers=headers, timeout=timeout)
         else:
             raise ValueError(f"Unsupported method: {method}")
         
@@ -118,7 +152,7 @@ class OllamaClient:
             url = f"{self.base_url.rstrip('/')}/api/chat"
             headers = {'Content-Type': 'application/json'}
             
-            response = requests.post(url, json=data, headers=headers, stream=stream)
+            response = requests.post(url, json=data, headers=headers, stream=stream, timeout=180)
             
             if stream:
                 for line in response.iter_lines():
@@ -148,21 +182,61 @@ class OllamaClient:
             # Read and encode the image
             with open(image_path, 'rb') as image_file:
                 image_data = base64.b64encode(image_file.read()).decode('utf-8')
-            
-            data = {
+
+            # Prefer chat API for multimodal models; include image in user message
+            chat_payload = {
+                'model': model,
+                'messages': [
+                    {
+                        'role': 'user',
+                        'content': prompt,
+                        'images': [image_data]
+                    }
+                ],
+                # Ask for strict JSON output when supported by the model/server
+                'format': 'json',
+                'options': {
+                    'temperature': 0.2
+                },
+                'stream': False
+            }
+
+            try:
+                chat_url = f"{self.base_url.rstrip('/')}/api/chat"
+                headers = {'Content-Type': 'application/json'}
+                response = requests.post(chat_url, json=chat_payload, headers=headers, timeout=180)
+                if response.status_code == 200:
+                    result = response.json()
+                    if 'message' in result and 'content' in result['message']:
+                        return result['message']['content']
+                else:
+                    current_app.logger.warning(f"Vision chat returned {response.status_code}: {response.text}")
+            except Exception as e:
+                current_app.logger.warning(f"Vision chat path failed, falling back to generate: {e}")
+
+            # Fallback to generate API with images if chat path fails
+            generate_payload = {
                 'model': model,
                 'prompt': prompt,
                 'images': [image_data],
+                'format': 'json',
+                'options': {
+                    'temperature': 0.2
+                },
                 'stream': False
             }
-            
-            response = self._make_request('api/generate', 'POST', data)
-            
+
+            response = self._make_request('api/generate', 'POST', generate_payload)
             if response.status_code == 200:
                 result = response.json()
-                return result.get('response', '')
-            return None
-        
+                # Some servers return { response: "..." }
+                if isinstance(result, dict):
+                    return result.get('response') or result.get('message', {}).get('content', '')
+                return None
+            else:
+                current_app.logger.error(f"Vision generate returned {response.status_code}: {response.text}")
+                return None
+
         except Exception as e:
             current_app.logger.error(f"Error in vision analysis: {e}")
             return None

@@ -121,7 +121,11 @@ def users():
         page=page, per_page=20, error_out=False
     )
     
-    return render_template('admin/users.html', users=users, search=search, filter_type=filter_type)
+    # Get registration setting
+    registration_setting = GlobalSettings.query.filter_by(key='user_registration_enabled').first()
+    registration_enabled = registration_setting.get_value().lower() == 'true' if registration_setting else True
+    
+    return render_template('admin/users.html', users=users, search=search, filter_type=filter_type, registration_enabled=registration_enabled)
 
 
 @admin_bp.route('/users/create', methods=['GET', 'POST'])
@@ -207,6 +211,70 @@ def edit_user(user_id):
     return render_template('admin/edit_user.html', form=form, user=user)
 
 
+@admin_bp.route('/users/<int:user_id>/toggle-status', methods=['POST'])
+@login_required
+@admin_required
+def toggle_user_status(user_id):
+    """Toggle user active status"""
+    user = User.query.get_or_404(user_id)
+    
+    if user.id == current_user.id:
+        flash("You cannot modify your own status!", 'error')
+        return redirect(url_for('admin.users'))
+    
+    old_status = user.is_active
+    user.is_active = not user.is_active
+    
+    try:
+        db.session.commit()
+        
+        action = 'activated' if user.is_active else 'deactivated'
+        log_admin_action('user_status_changed', f'{action.title()} user: {user.username}', 
+                        user.id, {'old_status': old_status, 'new_status': user.is_active})
+        
+        flash(f'User {user.username} {action} successfully!', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash('Error updating user status. Please try again.', 'error')
+    
+    return redirect(url_for('admin.users'))
+
+
+@admin_bp.route('/users/<int:user_id>/reset-password', methods=['POST'])
+@login_required
+@admin_required
+def reset_user_password(user_id):
+    """Reset user password to default"""
+    user = User.query.get_or_404(user_id)
+    
+    # Generate a random password or use default
+    import secrets
+    import string
+    new_password = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(12))
+    
+    try:
+        user.set_password(new_password)
+        db.session.commit()
+        
+        log_admin_action('password_reset', f'Reset password for user: {user.username}', user.id)
+        
+        # Return the password in a secure way for display in modal
+        return jsonify({
+            'success': True,
+            'username': user.username,
+            'new_password': new_password,
+            'message': f'Password reset successfully for {user.username}'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': 'Error resetting password. Please try again.'
+        }), 500
+
+
 @admin_bp.route('/users/<int:user_id>/delete', methods=['POST'])
 @login_required
 @admin_required
@@ -232,6 +300,52 @@ def delete_user(user_id):
         flash('Error deleting user. Please try again.', 'error')
     
     return redirect(url_for('admin.users'))
+
+
+@admin_bp.route('/users/toggle-registration', methods=['POST'])
+@login_required
+@admin_required
+def toggle_registration():
+    """Toggle user registration on/off"""
+    try:
+        setting = GlobalSettings.query.filter_by(key='user_registration_enabled').first()
+        
+        if not setting:
+            # Create setting if it doesn't exist
+            setting = GlobalSettings(
+                key='user_registration_enabled',
+                value='true',
+                description='Allow new user registration',
+                category='security',
+                updated_by=current_user.id
+            )
+            db.session.add(setting)
+        
+        # Toggle the value
+        current_value = setting.get_value().lower()
+        new_value = 'false' if current_value == 'true' else 'true'
+        setting.set_value(new_value)
+        setting.updated_by = current_user.id
+        setting.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        status = 'enabled' if new_value == 'true' else 'disabled'
+        log_admin_action('registration_toggled', f'User registration {status}', 
+                        metadata={'old_value': current_value, 'new_value': new_value})
+        
+        return jsonify({
+            'success': True,
+            'enabled': new_value == 'true',
+            'message': f'User registration {status} successfully'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': 'Error toggling registration. Please try again.'
+        }), 500
 
 
 @admin_bp.route('/users/bulk-action', methods=['POST'])

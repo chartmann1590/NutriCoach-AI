@@ -232,11 +232,11 @@ function displayResults(candidates) {
             <div class="flex justify-between items-start">
                 <div class="flex-1">
                     <h5 class="font-medium text-gray-900 dark:text-gray-100">
-                        ${candidate.name}
+                        ${candidate.name || ''}
                     </h5>
                     <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        Estimated portion: ${candidate.portion_grams}g | 
-                        Confidence: ${Math.round(candidate.confidence * 100)}%
+                        Estimated portion: ${(candidate.portion_grams ?? (candidate.portion ? (parseInt(candidate.portion) || 100) : 100))}g | 
+                        Confidence: ${(() => { const c = Number(candidate.confidence); return isFinite(c) ? Math.round((c > 1 ? c/100 : c) * 100) : 70; })()}%
                         ${candidate.nutrition && candidate.nutrition.source ? ` | Source: ${candidate.nutrition.source}` : ''}
                     </div>
                     

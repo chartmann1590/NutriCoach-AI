@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../models/food_log.dart';
 import '../models/food_item.dart';
@@ -653,6 +654,67 @@ class ApiService {
         rethrow;
       }
       throw Exception('Failed to clear chat history: $e');
+    }
+  }
+
+  // Photo food analysis functionality
+  static Future<PhotoAnalysisResult> uploadPhotoForAnalysis(File imageFile) async {
+    if (_baseUrl == null || _sessionCookie == null) {
+      throw Exception('Not authenticated. Please login first.');
+    }
+
+    try {
+      print('Uploading photo for analysis: ${imageFile.path}');
+
+      // Create multipart request
+      final request = http.MultipartRequest('POST', Uri.parse('$_baseUrl/api/photo/upload'));
+      
+      // Add session cookie
+      if (_sessionCookie != null) {
+        request.headers['Cookie'] = _sessionCookie!;
+      }
+      
+      // Add the photo file
+      final multipartFile = await http.MultipartFile.fromPath(
+        'photo',
+        imageFile.path,
+        filename: 'food_photo.jpg',
+      );
+      request.files.add(multipartFile);
+
+      print('Sending multipart request...');
+      
+      // Send the request
+      final streamedResponse = await request.send().timeout(const Duration(seconds: 120));
+      final response = await http.Response.fromStream(streamedResponse);
+
+      print('Photo analysis response: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 201) {
+        final data = json.decode(response.body);
+        return PhotoAnalysisResult.fromJson(data);
+      } else if (response.statusCode == 502) {
+        // Handle analysis failure
+        final data = json.decode(response.body);
+        return PhotoAnalysisResult(
+          candidates: [],
+          error: data['error'] ?? 'Photo analysis failed',
+          warning: data['warning'],
+        );
+      } else if (response.statusCode == 401) {
+        clearSession();
+        throw Exception('Session expired. Please login again.');
+      } else {
+        final data = json.decode(response.body);
+        throw Exception(data['error'] ?? 'Photo analysis failed with status ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Photo analysis error: $e');
+      if (e.toString().contains('Session expired')) {
+        rethrow;
+      }
+      throw Exception('Photo analysis failed: $e');
     }
   }
 }

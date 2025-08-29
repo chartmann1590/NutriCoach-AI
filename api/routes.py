@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import csv
 from datetime import datetime, timedelta
@@ -744,83 +745,136 @@ def _analyze_food_photo(filepath, photo_id):
     """Analyze food photo and return (candidates, meta) with enhanced food identification"""
     try:
         meta = {'source': None, 'warning': None, 'errors': []}
-        # Try Ollama vision first using user settings
-        client = OllamaClient.from_user_settings()
-        user_models = OllamaClient.get_user_models()
-        vision_model = user_models['vision_model']
-        
         vision_items = []
         
-        if vision_model:
-            current_app.logger.info(f"Using Ollama vision model: {vision_model}")
+        # Try Ollama vision first using user settings
+        try:
+            client = OllamaClient.from_user_settings()
+            current_app.logger.info(f"Connecting to Ollama at: {client.base_url}")
             
-            # Enhanced prompt for better food identification
-            food_prompt = """Analyze this food image and identify all visible food items. For each food item you identify, provide:
+            # Test connection first
+            if not client.test_connection():
+                current_app.logger.warning("Ollama is not available, check if Ollama is running")
+                meta['warning'] = 'AI vision service unavailable - ensure Ollama is running and accessible'
+                raise Exception("Ollama connection failed")
+            
+            user_models = OllamaClient.get_user_models()
+            vision_model = user_models['vision_model']
+            
+            if vision_model:
+                current_app.logger.info(f"Using Ollama vision model: {vision_model}")
+                
+                # Neutral, JSON-only prompt to avoid anchoring on examples
+                food_prompt = """You are analyzing a food photograph.
 
-1. The specific name of the food item (be as specific as possible, e.g., "grilled chicken breast", "steamed broccoli", "brown rice")
-2. An estimated portion size in grams based on the visual appearance
-3. Your confidence level from 0.0 to 1.0
+Identify only the food items that are clearly visible in the image. Do not guess.
 
-Format your response as a JSON array like this:
+For each identified item, return an object with these fields:
+- name: specific food name that matches what is visible
+- portion_grams: numeric estimate of weight in grams
+- confidence: a number from 0.0 to 1.0 for how sure you are
+
+Output must be ONLY a JSON array (no prose, no markdown), for example:
 [
-  {"name": "grilled chicken breast", "portion": "150g", "confidence": 0.85},
-  {"name": "steamed broccoli", "portion": "80g", "confidence": 0.75},
-  {"name": "brown rice", "portion": "100g", "confidence": 0.90}
+  {"name": "item name", "portion_grams": 120, "confidence": 0.82}
 ]
 
-Focus only on food items that are clearly visible and identifiable. Ignore plates, utensils, or decorative items."""
+If nothing is clearly identifiable, return []."""
 
-            try:
                 # Use the vision analysis method
                 analysis_result = client.vision_analyze(filepath, vision_model, food_prompt)
-                current_app.logger.info(f"Vision analysis result: {analysis_result}")
+                current_app.logger.info(f"Raw vision analysis result: {analysis_result}")
+                current_app.logger.info(f"Vision analysis result type: {type(analysis_result)}")
+                if analysis_result:
+                    current_app.logger.info(f"Vision analysis result length: {len(analysis_result)} chars")
                 
                 if analysis_result:
                     # Try to extract JSON from the response
                     import re
-                    json_match = re.search(r'\[.*?\]', analysis_result, re.DOTALL)
-                    if json_match:
-                        try:
-                            vision_items = json.loads(json_match.group())
-                            current_app.logger.info(f"Successfully parsed {len(vision_items)} food items from vision")
-                            meta['source'] = 'vision'
-                        except json.JSONDecodeError as e:
-                            current_app.logger.warning(f"Failed to parse JSON from vision result: {e}")
-                            meta['errors'].append(f"Vision JSON parse error: {str(e)}")
-                            # Parse the text response as fallback
+                    
+                    # First try to parse the entire response as JSON
+                    try:
+                        vision_items = json.loads(analysis_result.strip())
+                        current_app.logger.info(f"Successfully parsed entire response as JSON with {len(vision_items)} items")
+                        meta['source'] = 'vision'
+                    except json.JSONDecodeError:
+                        # Try to extract JSON array from text
+                        json_match = re.search(r'\[.*?\]', analysis_result, re.DOTALL)
+                        if json_match:
+                            try:
+                                vision_items = json.loads(json_match.group())
+                                current_app.logger.info(f"Successfully parsed extracted JSON array with {len(vision_items)} food items from vision")
+                                meta['source'] = 'vision'
+                            except json.JSONDecodeError as e:
+                                current_app.logger.warning(f"Failed to parse extracted JSON from vision result: {e}")
+                                current_app.logger.warning(f"Extracted JSON was: {json_match.group()}")
+                                meta['errors'].append(f"Vision JSON parse error: {str(e)}")
+                                # Parse the text response as fallback
+                                vision_items = _parse_vision_text_response(analysis_result)
+                                if vision_items:
+                                    meta['source'] = 'vision'
+                        else:
+                            current_app.logger.warning(f"No JSON array found in response: {analysis_result[:200]}...")
+                            # Parse the text response
                             vision_items = _parse_vision_text_response(analysis_result)
                             if vision_items:
                                 meta['source'] = 'vision'
-                    else:
-                        # Parse the text response
-                        vision_items = _parse_vision_text_response(analysis_result)
-                        if vision_items:
-                            meta['source'] = 'vision'
                 else:
                     current_app.logger.warning("No result from Ollama vision analysis")
                     meta['warning'] = 'Vision model returned no result'
-                    
-            except Exception as e:
-                current_app.logger.error(f"Error with Ollama vision: {e}")
-                meta['errors'].append(f"Vision error: {str(e)}")
-        else:
-            current_app.logger.warning("No vision model configured; using fallback classifier")
-            meta['warning'] = 'No vision model configured; using fallback classifier'
+            else:
+                current_app.logger.warning("No vision model configured")
+                meta['warning'] = 'No vision model configured'
+                
+        except Exception as e:
+            current_app.logger.error(f"Error with Ollama vision: {e}")
+            meta['errors'].append(f"Vision error: {str(e)}")
+            # Don't fail completely, fall through to fallback
         
-        # Fallback to local classifier if Ollama vision failed
+        # If Ollama vision failed, return error instead of fake results
         if not vision_items:
-            current_app.logger.info("Using fallback local classifier")
-            classifier = VisionClassifier()
-            vision_items = classifier.classify_image(filepath)
-            meta['source'] = 'fallback'
+            current_app.logger.error("Vision analysis failed - no results from Ollama")
+            meta['errors'].append("Vision analysis failed - check Ollama connection and vision model")
+            return [], meta
+        
+        current_app.logger.info(f"Vision items before parsing: {vision_items}")
+        current_app.logger.info(f"Vision items type: {type(vision_items)}, length: {len(vision_items) if hasattr(vision_items, '__len__') else 'N/A'}")
+        
+        # Ensure vision_items is a list before passing to parser
+        if isinstance(vision_items, str):
+            current_app.logger.warning("Vision items is still a string, attempting to parse as JSON")
+            try:
+                vision_items = json.loads(vision_items)
+            except json.JSONDecodeError as e:
+                current_app.logger.error(f"Failed to parse vision items string as JSON: {e}")
+                return [], meta
+        
+        # Handle case where vision model returns a single dict instead of a list
+        if isinstance(vision_items, dict):
+            current_app.logger.info("Vision items is a dict, wrapping in list")
+            vision_items = [vision_items]
+        
+        if not isinstance(vision_items, list):
+            current_app.logger.error(f"Vision items is not a list: {type(vision_items)}")
+            return [], meta
         
         # Parse results with enhanced nutrition lookup
         parser = FoodParser()
-        candidates = parser.parse_vision_results(vision_items)
+        try:
+            candidates = parser.parse_vision_results(vision_items)
+            current_app.logger.info(f"Parser returned {len(candidates)} candidates")
+            
+            # Ensure candidates is a list
+            if not isinstance(candidates, list):
+                current_app.logger.error(f"Parser returned non-list type: {type(candidates)}")
+                candidates = []
+        except Exception as e:
+            current_app.logger.error(f"Error parsing vision results: {e}")
+            candidates = []
         
         # Enhance candidates with nutrition search results
         for candidate in candidates:
-            if candidate.get('name'):
+            if candidate and isinstance(candidate, dict) and candidate.get('name'):
                 # Search for nutrition data
                 nutrition_results = parser.nutrition_search.search_food(candidate['name'])
                 if nutrition_results:

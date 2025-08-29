@@ -3,6 +3,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from models import User, Profile, Settings
 from forms.auth import LoginForm, RegistrationForm
 from extensions import db
+from constants import DEFAULT_SYSTEM_PROMPT
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -20,6 +21,21 @@ def login():
         if user and user.check_password(form.password.data):
             login_user(user, remember=True)
             next_page = request.args.get('next')
+            
+            # Ensure user has settings with default system prompt (only if blank)
+            if not user.settings:
+                settings = Settings(
+                    user_id=user.id,
+                    ollama_url='http://localhost:11434',
+                    system_prompt=DEFAULT_SYSTEM_PROMPT,
+                    safety_mode=True
+                )
+                db.session.add(settings)
+                db.session.commit()
+            elif not user.settings.system_prompt or user.settings.system_prompt.strip() == '':
+                # Only update if system prompt is blank - preserve user's custom prompts
+                user.settings.system_prompt = DEFAULT_SYSTEM_PROMPT
+                db.session.commit()
             
             # Check if user needs onboarding
             if not user.profile:
@@ -51,15 +67,7 @@ def register():
             settings = Settings(
                 user_id=user.id,
                 ollama_url='http://localhost:11434',
-                system_prompt="""You are a supportive nutrition coach. Help users achieve their health goals through evidence-based guidance. 
-
-Guidelines:
-- Be encouraging and supportive
-- Provide specific, actionable advice
-- Reference the user's current nutrition data when relevant
-- Suggest foods that fit their preferences and restrictions
-- If asked for medical advice, recommend consulting a healthcare professional
-- Keep responses concise and practical""",
+                system_prompt=DEFAULT_SYSTEM_PROMPT,
                 safety_mode=True
             )
             db.session.add(settings)

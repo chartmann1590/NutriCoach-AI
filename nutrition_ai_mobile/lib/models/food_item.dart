@@ -11,6 +11,7 @@ class FoodSearchResult {
   final double sodiumMg;
   final String source;
   final String? imageUrl;
+  final double? portionGrams;
 
   FoodSearchResult({
     required this.id,
@@ -25,6 +26,7 @@ class FoodSearchResult {
     required this.sodiumMg,
     required this.source,
     this.imageUrl,
+    this.portionGrams,
   });
 
   factory FoodSearchResult.fromJson(Map<String, dynamic> json) {
@@ -55,6 +57,7 @@ class FoodSearchResult {
       sodiumMg: nutrition != null ? _parseDouble(nutrition['sodium_per_100g']) * 1000 : 0.0, // Convert g to mg
       source: json['source'] ?? 'unknown',
       imageUrl: json['image_url'],
+      portionGrams: json['portion_grams'] != null ? _parseDouble(json['portion_grams']) : null,
     );
   }
 
@@ -82,6 +85,7 @@ class FoodSearchResult {
       'sodium_mg': sodiumMg,
       'source': source,
       'image_url': imageUrl,
+      'portion_grams': portionGrams,
     };
   }
 
@@ -106,5 +110,119 @@ class FoodSearchResult {
       'sodium_mg': sodiumMg * scaleFactor,
       'source': source,
     };
+  }
+}
+
+class PhotoFoodCandidate {
+  final String name;
+  final double portionGrams;
+  final double confidence;
+  final NutritionInfo? nutrition;
+  final List<FoodSearchResult>? searchResults;
+
+  PhotoFoodCandidate({
+    required this.name,
+    required this.portionGrams,
+    required this.confidence,
+    this.nutrition,
+    this.searchResults,
+  });
+
+  factory PhotoFoodCandidate.fromJson(Map<String, dynamic> json) {
+    return PhotoFoodCandidate(
+      name: json['name'] ?? '',
+      portionGrams: _parseDouble(json['portion_grams'] ?? json['portion']),
+      confidence: _parseDouble(json['confidence']),
+      nutrition: json['nutrition'] != null 
+          ? NutritionInfo.fromJson(json['nutrition']) 
+          : null,
+      searchResults: json['search_results'] != null
+          ? (json['search_results'] as List)
+              .map((item) => FoodSearchResult.fromJson(item))
+              .toList()
+          : null,
+    );
+  }
+
+  static double _parseDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      return double.tryParse(value) ?? 0.0;
+    }
+    return 0.0;
+  }
+}
+
+class NutritionInfo {
+  final double calories;
+  final double proteinG;
+  final double carbsG;
+  final double fatG;
+  final double fiberG;
+  final double sugarG;
+  final double sodiumMg;
+  final String? source;
+
+  NutritionInfo({
+    required this.calories,
+    required this.proteinG,
+    required this.carbsG,
+    required this.fatG,
+    required this.fiberG,
+    required this.sugarG,
+    required this.sodiumMg,
+    this.source,
+  });
+
+  factory NutritionInfo.fromJson(Map<String, dynamic> json) {
+    return NutritionInfo(
+      calories: _parseDouble(json['calories']),
+      proteinG: _parseDouble(json['protein_g']),
+      carbsG: _parseDouble(json['carbs_g']),
+      fatG: _parseDouble(json['fat_g']),
+      fiberG: _parseDouble(json['fiber_g']),
+      sugarG: _parseDouble(json['sugar_g']),
+      sodiumMg: _parseDouble(json['sodium_mg']),
+      source: json['source'],
+    );
+  }
+
+  static double _parseDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      return double.tryParse(value) ?? 0.0;
+    }
+    return 0.0;
+  }
+}
+
+class PhotoAnalysisResult {
+  final List<PhotoFoodCandidate> candidates;
+  final String? error;
+  final String? warning;
+  final String? analysisSource;
+
+  PhotoAnalysisResult({
+    required this.candidates,
+    this.error,
+    this.warning,
+    this.analysisSource,
+  });
+
+  factory PhotoAnalysisResult.fromJson(Map<String, dynamic> json) {
+    return PhotoAnalysisResult(
+      candidates: json['candidates'] != null
+          ? (json['candidates'] as List)
+              .map((item) => PhotoFoodCandidate.fromJson(item))
+              .toList()
+          : [],
+      error: json['error'],
+      warning: json['warning'],
+      analysisSource: json['analysis_source'],
+    );
   }
 }
