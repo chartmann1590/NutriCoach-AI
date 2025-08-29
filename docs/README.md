@@ -10,6 +10,8 @@ This folder contains documentation for the NutriCoach application.
 - `mobile_app.md` – Mobile app (Flutter) guide
 - `FEATURE_INDEX.md` – Feature overview
 - `COMPLETE_PROGRAM_DOCUMENTATION.md` – End-to-end application documentation
+- `scripts.md` – Maintenance and utility scripts
+- `tests.md` – Test suite structure and usage
 
 ## URLs (Docker)
 

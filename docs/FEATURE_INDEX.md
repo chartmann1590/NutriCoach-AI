@@ -219,7 +219,8 @@
 ### 🔧 Development Tools
 - **Docker Support**: Containerized deployment
 - **Migration System**: Database version control
-- **Testing Suite**: Unit and integration tests
+- **Testing Suite**: Unit, integration, and E2E tests (see [Testing Guide](tests.md))
+- **Scripts**: Admin and maintenance utilities (see [Scripts Guide](scripts.md))
 - **Documentation**: Comprehensive API and user docs
 
 ### 📊 Data Formats
