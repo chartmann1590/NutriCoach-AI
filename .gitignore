@@ -1,12 +1,16 @@
-# --- General ---
+# Claude Code instructions (should not be committed)
+CLAUDE.md
+
+# General
 .DS_Store
 Thumbs.db
 *.log
 *.tmp
 *.swp
 *.swo
+*~
 
-# --- Python / Flask ---
+# Python / Flask
 __pycache__/
 *.py[cod]
 *.pyo
@@ -14,7 +18,6 @@ __pycache__/
 *.so
 *.egg-info/
 .eggs/
-.build/
 dist/
 build/
 pip-wheel-metadata/
@@ -33,54 +36,34 @@ venv_test/
 .env.*
 .envrc
 
-# Instance data (SQLite DB, uploads, etc.)
-instance/**
-!instance/.gitkeep
-
-# App uploads & logs
+# Instance data (SQLite DB, uploads, logs)
+instance/
 logs/
 *.pid
 *.pid.lock
-static/uploads/**
+static/uploads/
 
 # IDE / Editor
 .vscode/
 .idea/
 
-# --- Docker ---
-*.pid
-
-# --- Flutter / Mobile (nutrition_ai_mobile) ---
+# Flutter / Mobile
 nutrition_ai_mobile/.dart_tool/
 nutrition_ai_mobile/.packages
-nutrition_ai_mobile/.flutter-plugins
-nutrition_ai_mobile/.flutter-plugins-dependencies
+nutrition_ai_mobile/.flutter-plugins*
 nutrition_ai_mobile/build/
-
-# Android
 nutrition_ai_mobile/android/.gradle/
 nutrition_ai_mobile/android/local.properties
 nutrition_ai_mobile/android/app/release/
-
-# iOS
 nutrition_ai_mobile/ios/Pods/
 nutrition_ai_mobile/ios/.symlinks/
-nutrition_ai_mobile/ios/Flutter/App.framework
-nutrition_ai_mobile/ios/Flutter/Flutter.framework
-nutrition_ai_mobile/ios/Flutter/Generated.xcconfig
-nutrition_ai_mobile/ios/Flutter/Flutter.podspec
-nutrition_ai_mobile/ios/Runner/GeneratedPluginRegistrant.*
-
-# Windows
+nutrition_ai_mobile/ios/Flutter/
 nutrition_ai_mobile/windows/runner/Release/
-
-# Web
 nutrition_ai_mobile/web/generated_plugin_registrant.dart
-
-# Misc build outputs
 **/outputs/
 **/intermediates/
 **/.gradle/
-
 **/nul
+*.apk
+*.ipa
 

@@ -1,26 +1,22 @@
+# Claude Code instructions
+CLAUDE.md
+
 # Git
 .git
 .gitignore
 
 # Python
-__pycache__
-*.pyc
+__pycache__/
+*.py[cod]
 *.pyo
 *.pyd
-.Python
-env
-pip-log.txt
-pip-delete-this-directory.txt
-.tox
-.coverage
-.pytest_cache
-htmlcov
-
-# Virtual environments
 venv/
-.venv/
-ENV/
-env/
+venv_test/
+.pytest_cache/
+.coverage*
+htmlcov/
+.mypy_cache/
+.env*
 
 # IDE
 .vscode/
@@ -33,77 +29,31 @@ env/
 .DS_Store
 Thumbs.db
 
-# Node modules (if any)
-node_modules/
-
-# Logs
+# Logs & temp
 *.log
 logs/
+*.tmp
+*.temp
 
-# Database
-*.db
-*.sqlite
-
-# Uploads
+# Database & uploads
+instance/
 static/uploads/
 
-# Test outputs
-.coverage
-htmlcov/
-.pytest_cache/
-
-# Documentation
-docs/_build/
+# Documentation & screenshots
 docs/screenshots/
 *.png
 *.jpg
 *.jpeg
 
-# Local development scripts
-capture_*.py
-*screenshot*.py
-document_*.py
-*_test_*.py
-simple_*.py
-actual_*.py
-comprehensive_*.py
-
-# Environment files
-.env
-
-# Temporary files
-*.tmp
-*.temp
-
-# Mobile app directories
-nutrition_ai_mobile/
-nutricoach_mobile_final/
-nutricoach_mobile_new/
+# Mobile app build artifacts
+nutrition_ai_mobile/build/
+nutrition_ai_mobile/.dart_tool/
+nutrition_ai_mobile/android/.gradle/
 *.apk
 *.ipa
-android/
-ios/
-flutter/
 
-# Build directories
+# Build outputs
 build/
 dist/
-target/
-
-# Test directories  
-venv_test/
-
-# Docker files
-Dockerfile*
-docker-compose*
-.dockerignore
-
-# Version control
-.git/
-.gitignore
-
-# Development tools
-.pytest_cache/
-.mypy_cache/
-.black/
-.coverage*
+**/outputs/
+**/intermediates/
