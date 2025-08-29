@@ -3,8 +3,10 @@ name: Android Build
 on:
   push:
     branches: [main]
+    paths: ['nutrition_ai_mobile/**']
   pull_request:
     branches: [main]
+    paths: ['nutrition_ai_mobile/**']
 
 jobs:
   build:
