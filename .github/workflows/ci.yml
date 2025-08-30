@@ -52,8 +52,8 @@ jobs:
           FLASK_ENV: testing
           SECRET_KEY: test-secret-key
           WTF_CSRF_SECRET_KEY: test-csrf-secret
-          DATABASE_URL: sqlite:///:memory:
-          REDIS_URL: redis://localhost:6379/0
+          DATABASE_URL: "sqlite:///:memory:"
+          REDIS_URL: "redis://localhost:6379/0"
         run: |
           python -m pytest tests/unit/ -v --cov=. --cov-report=xml --cov-report=html
 
@@ -62,8 +62,8 @@ jobs:
           FLASK_ENV: testing
           SECRET_KEY: test-secret-key
           WTF_CSRF_SECRET_KEY: test-csrf-secret
-          DATABASE_URL: sqlite:///:memory:
-          REDIS_URL: redis://localhost:6379/0
+          DATABASE_URL: "sqlite:///:memory:"
+          REDIS_URL: "redis://localhost:6379/0"
         run: |
           python -m pytest tests/integration/ -v
 
@@ -72,8 +72,8 @@ jobs:
           FLASK_ENV: testing
           SECRET_KEY: test-secret-key
           WTF_CSRF_SECRET_KEY: test-csrf-secret
-          DATABASE_URL: sqlite:///test_nutricoach.db
-          REDIS_URL: redis://localhost:6379/1
+          DATABASE_URL: "sqlite:///test_nutricoach.db"
+          REDIS_URL: "redis://localhost:6379/1"
         run: |
           python app.py &
           sleep 10
@@ -84,9 +84,9 @@ jobs:
           FLASK_ENV: testing
           SECRET_KEY: test-secret-key
           WTF_CSRF_SECRET_KEY: test-csrf-secret
-          DATABASE_URL: sqlite:///test_nutricoach.db
-          REDIS_URL: redis://localhost:6379/1
-          BASE_URL: http://localhost:5001
+          DATABASE_URL: "sqlite:///test_nutricoach.db"
+          REDIS_URL: "redis://localhost:6379/1"
+          BASE_URL: "http://localhost:5001"
         run: |
           python -m pytest tests/e2e/ -v --headed
 

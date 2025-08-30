@@ -193,8 +193,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             return ElevatedButton(
                               onPressed: authService.isLoading ? null : _register,
                               style: ElevatedButton.styleFrom(
-                                primary: Colors.green.shade600,
-                                onPrimary: Colors.white,
+                                backgroundColor: Colors.green.shade600,
+                                foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(vertical: 16),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),

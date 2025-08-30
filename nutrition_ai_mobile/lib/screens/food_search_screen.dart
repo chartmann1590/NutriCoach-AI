@@ -249,8 +249,8 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
                             }
                           },
                           style: ElevatedButton.styleFrom(
-                            primary: _showBarcode ? Colors.orange.shade600 : Colors.green.shade600,
-                            onPrimary: Colors.white,
+                            backgroundColor: _showBarcode ? Colors.orange.shade600 : Colors.green.shade600,
+                            foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),

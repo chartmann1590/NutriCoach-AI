@@ -182,8 +182,8 @@ class _ServerSetupScreenState extends State<ServerSetupScreen> {
                         ElevatedButton(
                           onPressed: _isTestingConnection ? null : _testConnection,
                           style: ElevatedButton.styleFrom(
-                            primary: Colors.blue.shade600,
-                            onPrimary: Colors.white,
+                            backgroundColor: Colors.blue.shade600,
+                            foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),

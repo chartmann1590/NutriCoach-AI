@@ -131,8 +131,8 @@ class _DashboardContentState extends State<DashboardContent> {
                     icon: const Icon(Icons.add),
                     label: const Text('Log Food'),
                     style: ElevatedButton.styleFrom(
-                      primary: Colors.blue.shade600,
-                      onPrimary: Colors.white,
+                      backgroundColor: Colors.blue.shade600,
+                      foregroundColor: Colors.white,
                     ),
                   ),
                 ),

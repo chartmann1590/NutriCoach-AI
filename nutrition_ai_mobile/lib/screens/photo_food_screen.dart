@@ -62,8 +62,8 @@ class _PhotoFoodScreenState extends State<PhotoFoodScreen> {
                             icon: const Icon(Icons.camera_alt),
                             label: const Text('Take Photo'),
                             style: ElevatedButton.styleFrom(
-                              primary: Colors.purple.shade600,
-                              onPrimary: Colors.white,
+                              backgroundColor: Colors.purple.shade600,
+                              foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
@@ -78,7 +78,7 @@ class _PhotoFoodScreenState extends State<PhotoFoodScreen> {
                             icon: const Icon(Icons.photo_library),
                             label: const Text('From Gallery'),
                             style: OutlinedButton.styleFrom(
-                              primary: Colors.purple.shade600,
+                              backgroundColor: Colors.purple.shade600,
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
@@ -130,8 +130,8 @@ class _PhotoFoodScreenState extends State<PhotoFoodScreen> {
                           icon: const Icon(Icons.analytics),
                           label: const Text('Analyze Food'),
                           style: ElevatedButton.styleFrom(
-                            primary: Colors.green.shade600,
-                            onPrimary: Colors.white,
+                            backgroundColor: Colors.green.shade600,
+                            foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),

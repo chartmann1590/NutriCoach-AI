@@ -420,8 +420,8 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
               ElevatedButton(
                 onPressed: _isLogging ? null : _logFood,
                 style: ElevatedButton.styleFrom(
-                  primary: Colors.green.shade600,
-                  onPrimary: Colors.white,
+                  backgroundColor: Colors.green.shade600,
+                  foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
