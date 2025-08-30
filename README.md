@@ -630,4 +630,4 @@ flutter config --enable-macos    # Enable macOS desktop
 flutter config --enable-linux    # Enable Linux desktop
 ```
 
-For complete mobile app documentation, see `docs/mobile_app.md`.
+For complete mobile app documentation, see `docs/mobile_app.md`.# Last updated: Sat, Aug 30, 2025  3:13:59 PM
