@@ -1,9 +1,15 @@
 # NutriCoach 🥗🤖
 
+[![GitHub stars](https://img.shields.io/github/stars/chartmann1590/NutriCoach-AI?style=social)](https://github.com/chartmann1590/NutriCoach-AI/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/chartmann1590/NutriCoach-AI?style=social)](https://github.com/chartmann1590/NutriCoach-AI/network)
+[![GitHub issues](https://img.shields.io/github/issues/chartmann1590/NutriCoach-AI)](https://github.com/chartmann1590/NutriCoach-AI/issues)
+[![GitHub license](https://img.shields.io/github/license/chartmann1590/NutriCoach-AI)](https://github.com/chartmann1590/NutriCoach-AI/blob/main/LICENSE)
+
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Flask](https://img.shields.io/badge/flask-3.0+-green.svg)](https://flask.palletsprojects.com/)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](Dockerfile)
+[![Flutter](https://img.shields.io/badge/flutter-3.10+-02569B.svg?logo=flutter)](https://flutter.dev)
+[![Docker](https://img.shields.io/badge/docker-ready-blue.svg?logo=docker)](Dockerfile)
+[![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-2088FF?logo=github-actions)](https://github.com/chartmann1590/NutriCoach-AI/actions)
 
 **NutriCoach** is a complete, production-ready AI-powered nutrition tracking web application built with Flask. It combines intelligent food recognition, personalized AI coaching, and comprehensive nutrition analytics with a privacy-first approach. The application features local AI processing via Ollama, comprehensive nutrition tracking, and a companion Flutter mobile app for cross-platform access.
 
@@ -49,8 +55,8 @@
 
 ```bash
 # Clone the repository
-git clone <repository-url>
-cd nutrition-ai
+git clone https://github.com/chartmann1590/NutriCoach-AI.git
+cd NutriCoach-AI
 
 # Build and start services
 docker compose up -d
@@ -547,25 +553,36 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- **Issues**: Report bugs and feature requests on GitHub Issues
-- **Documentation**: Check the [Wiki](../../wiki) for detailed guides
-- **Community**: Join discussions in [Discussions](../../discussions)
+- **🐛 Issues**: [Report bugs and feature requests](https://github.com/chartmann1590/NutriCoach-AI/issues)
+- **📚 Documentation**: [Check the Wiki for detailed guides](https://github.com/chartmann1590/NutriCoach-AI/wiki)
+- **💬 Discussions**: [Join the community discussions](https://github.com/chartmann1590/NutriCoach-AI/discussions)
+- **⭐ Star this repo**: If you find NutriCoach helpful!
 
 ## 🗺 Roadmap
 
 ### Upcoming Features
-- [ ] Advanced offline mode for mobile app
-- [ ] Meal planning and grocery lists
-- [ ] Nutrition goal templates and challenges
-- [ ] Recipe import, scaling, and meal prep
-- [ ] Social features and progress sharing
-- [ ] Enhanced ML models for food recognition
-- [ ] Integration with fitness trackers and wearables
-- [ ] Nutritionist collaboration and consultation features
-- [ ] Voice-to-text food logging
-- [ ] Batch photo processing for meal prep
+- [ ] 📱 Advanced offline mode for mobile app
+- [ ] 🛒 Meal planning and grocery lists
+- [ ] 🏆 Nutrition goal templates and challenges
+- [ ] 📖 Recipe import, scaling, and meal prep
+- [ ] 👥 Social features and progress sharing
+- [ ] 🤖 Enhanced ML models for food recognition
+- [ ] ⌚ Integration with fitness trackers and wearables
+- [ ] 👩‍⚕️ Nutritionist collaboration and consultation features
+- [ ] 🎤 Voice-to-text food logging
+- [ ] 📸 Batch photo processing for meal prep
+- [ ] 🔔 Push notifications and reminder system
+- [ ] 📊 Advanced analytics and reporting dashboard
 
 ### Recent Updates & Version History
+
+#### **v1.3.0**: Real-time Notifications & Enhancements (Latest)
+- ✅ **Real-time Notification System**: Admin notification templates and delivery
+- ✅ **Mobile App Polling**: Automatic notification checking with battery optimization
+- ✅ **Background Scheduling**: APScheduler integration for reminders and maintenance
+- ✅ **Enhanced Admin Panel**: Comprehensive notification management interface
+- ✅ **GitHub Integration**: CI/CD workflows for automated builds and deployments
+- ✅ **Improved Mobile UI**: Expandable FAB with notification badges
 
 #### **v1.2.0**: Enhanced AI & Mobile Features
 - ✅ **Default System Prompts**: Automatic coaching prompt assignment for all users
@@ -630,6 +647,17 @@ flutter config --enable-macos    # Enable macOS desktop
 flutter config --enable-linux    # Enable Linux desktop
 ```
 
-For complete mobile app documentation, see `docs/mobile_app.md`.# Last updated: Sat, Aug 30, 2025  3:13:59 PM
-# Notification system v1.3.0 - 2025-08-30 15:16:32
+For complete mobile app documentation, see `docs/mobile_app.md`.---
+
+<div align="center">
+
+### 🌟 Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=chartmann1590/NutriCoach-AI&type=Date)](https://star-history.com/#chartmann1590/NutriCoach-AI&Date)
+
+**Built with ❤️ using Python Flask, Flutter, and AI • Last updated: August 30, 2025**
+
+[⬆ Back to Top](#nutricoach-)
+
+</div>
 
