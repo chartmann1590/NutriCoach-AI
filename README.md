@@ -647,6 +647,10 @@ flutter config --enable-macos    # Enable macOS desktop
 flutter config --enable-linux    # Enable Linux desktop
 ```
 
+### Building Android APK
+For complete instructions on building the Android APK, including troubleshooting common issues and setup requirements, see:
+- **📱 [Flutter Android Build Guide](docs/flutter-android-build-guide.md)** - Complete documentation for building the Android app
+
 For complete mobile app documentation, see `docs/mobile_app.md`.---
 
 <div align="center">
